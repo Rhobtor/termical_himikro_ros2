@@ -1,0 +1,16 @@
+/**:
+  ros__parameters:
+    url: "rtsp://admin:laentiec27@192.168.1.64:554/Streaming/Channels/101"
+    frame_id: "thermal_optical_frame"
+    topic_name: "/thermal/image_raw"
+    fps: 10.0
+    backend: "ffmpeg"     # ffmpeg | gstreamer | any
+    transport: "tcp"      # tcp | udp
+    force_mono: true
+    resize_width: 0
+    resize_height: 0
+    use_low_latency_ffmpeg: true
+    use_low_latency_gstreamer: true
+    gstreamer_latency_ms: 0
+    reconnect_delay_ms: 500
+    publish_latest_only: true
