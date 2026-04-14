@@ -1,0 +1,224 @@
+# Runtime report
+timestamp=20260414_164838
+duration_s=10
+host=ubuntu
+
+## Nota
+Idealmente ejecuta esta captura mientras haya una persona visible delante de la camara.
+
+## Docker containers
+NAMES               IMAGE                          STATUS
+fanet_person_pose   cpgfanet_ros2_jetson:humble    Up 2 hours
+danet_ros2          cpgfanet_ros2_jetson:humble    Up 2 hours
+fanet_pair_sync     cpgfanet_ros2_jetson:humble    Up 2 hours
+fanet_rgb_bridge    cpgfanet_ros2_jetson:humble    Up 2 hours
+hikmicro_thermal    hikmicro_thermal_ros2:jetson   Up 2 hours
+zed_wrapper_2       zed_wrapper_2:latest           Up 2 hours
+
+## Docker stats snapshot
+CONTAINER ID   NAME               CPU %     MEM USAGE / LIMIT     MEM %     NET I/O   BLOCK I/O        PIDS
+d02f8fdc78dc   danet_ros2         89.03%    1.841GiB / 29.87GiB   6.16%     0B / 0B   1.98GB / 233kB   58
+b39c3e614d38   fanet_pair_sync    6.89%     70.33MiB / 29.87GiB   0.23%     0B / 0B   36.1MB / 233kB   22
+45e0ebda52cb   fanet_rgb_bridge   100.62%   83.95MiB / 29.87GiB   0.27%     0B / 0B   44.8MB / 233kB   22
+2af4e8d25540   hikmicro_thermal   106.10%   163.9MiB / 29.87GiB   0.54%     0B / 0B   83.7MB / 233kB   37
+52e9516ff513   zed_wrapper_2      61.58%    772.2MiB / 29.87GiB   2.52%     0B / 0B   254MB / 184kB    76
+
+## Host memory
+              total        used        free      shared  buff/cache   available
+Mem:           29Gi       8.6Gi        17Gi        35Mi       4.0Gi        20Gi
+Swap:          14Gi          0B        14Gi
+
+## Host uptime
+ 16:48:40 up  1:16,  0 users,  load average: 3.52, 3.75, 3.80
+
+## Topics snapshot
+== topics ==
+/clicked_point
+/diagnostics
+/fanet/input/rgb
+/fanet/input/thermal
+/fanet/person_centroid
+/fanet/person_centroids
+/fanet/person_count
+/fanet/person_distance
+/fanet/person_position_camera
+/fanet/person_position_robot
+/fanet/raw/rgb
+/fanet/raw/thermal
+/fanet/segmentation/mask_color
+/fanet/segmentation/mask_indices
+/fanet/segmentation/overlay
+/parameter_events
+/rosout
+/tf
+/tf_static
+/zed/joint_states
+/zed/plane
+/zed/plane_marker
+/zed/robot_description
+/zed/zed_node/atm_press
+/zed/zed_node/confidence/confidence_map
+/zed/zed_node/depth/camera_info
+/zed/zed_node/depth/depth_info
+/zed/zed_node/depth/depth_registered
+/zed/zed_node/depth/depth_registered/compressed
+/zed/zed_node/depth/depth_registered/compressedDepth
+/zed/zed_node/disparity/disparity_image
+/zed/zed_node/imu/data
+/zed/zed_node/imu/data_raw
+/zed/zed_node/imu/mag
+/zed/zed_node/left/camera_info
+/zed/zed_node/left/image_rect_color
+/zed/zed_node/left/image_rect_color/compressed
+/zed/zed_node/left/image_rect_color/compressedDepth
+/zed/zed_node/left_cam_imu_transform
+/zed/zed_node/left_gray/camera_info
+/zed/zed_node/left_gray/image_rect_gray
+/zed/zed_node/left_gray/image_rect_gray/compressed
+/zed/zed_node/left_gray/image_rect_gray/compressedDepth
+/zed/zed_node/left_raw/camera_info
+/zed/zed_node/left_raw/image_raw_color
+/zed/zed_node/left_raw/image_raw_color/compressed
+/zed/zed_node/left_raw/image_raw_color/compressedDepth
+/zed/zed_node/left_raw_gray/camera_info
+/zed/zed_node/left_raw_gray/image_raw_gray
+/zed/zed_node/left_raw_gray/image_raw_gray/compressed
+/zed/zed_node/left_raw_gray/image_raw_gray/compressedDepth
+/zed/zed_node/odom
+/zed/zed_node/path_map
+/zed/zed_node/path_odom
+/zed/zed_node/point_cloud/cloud_registered
+/zed/zed_node/point_cloud/cloud_registered/draco
+/zed/zed_node/point_cloud/cloud_registered/zlib
+/zed/zed_node/point_cloud/cloud_registered/zstd
+/zed/zed_node/pose
+/zed/zed_node/pose/status
+/zed/zed_node/pose_with_covariance
+/zed/zed_node/rgb/camera_info
+/zed/zed_node/rgb/image_rect_color
+/zed/zed_node/rgb/image_rect_color/compressed
+/zed/zed_node/rgb/image_rect_color/compressedDepth
+/zed/zed_node/rgb_gray/camera_info
+/zed/zed_node/rgb_gray/image_rect_gray
+/zed/zed_node/rgb_gray/image_rect_gray/compressed
+/zed/zed_node/rgb_gray/image_rect_gray/compressedDepth
+/zed/zed_node/rgb_raw/camera_info
+/zed/zed_node/rgb_raw/image_raw_color
+/zed/zed_node/rgb_raw/image_raw_color/compressed
+/zed/zed_node/rgb_raw/image_raw_color/compressedDepth
+/zed/zed_node/rgb_raw_gray/camera_info
+/zed/zed_node/rgb_raw_gray/image_raw_gray
+/zed/zed_node/rgb_raw_gray/image_raw_gray/compressed
+/zed/zed_node/rgb_raw_gray/image_raw_gray/compressedDepth
+/zed/zed_node/right/camera_info
+/zed/zed_node/right/image_rect_color
+/zed/zed_node/right/image_rect_color/compressed
+/zed/zed_node/right/image_rect_color/compressedDepth
+/zed/zed_node/right_gray/camera_info
+/zed/zed_node/right_gray/image_rect_gray
+/zed/zed_node/right_gray/image_rect_gray/compressed
+/zed/zed_node/right_gray/image_rect_gray/compressedDepth
+/zed/zed_node/right_raw/camera_info
+/zed/zed_node/right_raw/image_raw_color
+/zed/zed_node/right_raw/image_raw_color/compressed
+/zed/zed_node/right_raw/image_raw_color/compressedDepth
+/zed/zed_node/right_raw_gray/camera_info
+/zed/zed_node/right_raw_gray/image_raw_gray
+/zed/zed_node/right_raw_gray/image_raw_gray/compressed
+/zed/zed_node/right_raw_gray/image_raw_gray/compressedDepth
+/zed/zed_node/stereo/image_rect_color
+/zed/zed_node/stereo/image_rect_color/compressed
+/zed/zed_node/stereo/image_rect_color/compressedDepth
+/zed/zed_node/stereo_raw/image_raw_color
+/zed/zed_node/stereo_raw/image_raw_color/compressed
+/zed/zed_node/stereo_raw/image_raw_color/compressedDepth
+/zed/zed_node/temperature/imu
+/zed/zed_node/temperature/left
+/zed/zed_node/temperature/right
+== rgb info ==
+Type: sensor_msgs/msg/Image
+Publisher count: 1
+Subscription count: 1
+== thermal info ==
+Type: sensor_msgs/msg/Image
+Publisher count: 1
+Subscription count: 1
+== outputs ==
+Type: sensor_msgs/msg/Image
+Publisher count: 1
+Subscription count: 1
+Type: geometry_msgs/msg/PointStamped
+Publisher count: 1
+Subscription count: 1
+Type: geometry_msgs/msg/PoseArray
+Publisher count: 1
+Subscription count: 1
+Type: std_msgs/msg/Int32
+Publisher count: 1
+Subscription count: 0
+== person pose ==
+Type: geometry_msgs/msg/PointStamped
+Publisher count: 1
+Subscription count: 0
+Type: geometry_msgs/msg/PointStamped
+Publisher count: 1
+Subscription count: 0
+Type: std_msgs/msg/Float32
+Publisher count: 1
+Subscription count: 0
+
+## FPS model input
+/fanet/input/rgb: count=73 fps~=12.17
+/fanet/input/thermal: count=76 fps~=12.67
+
+## FPS model output
+/fanet/segmentation/overlay: count=36 fps~=6.00
+
+## Person topics sample
+data: 1
+---
+data: 1.301903247833252
+---
+header:
+  stamp:
+    sec: 1776178171
+    nanosec: 753989036
+  frame_id: robot_same_origin_frame
+point:
+  x: 1.2872004508972168
+  y: 0.11359638062014327
+  z: 0.1367157250192169
+---
+
+## Model perf log tail
+[INFO] [1776178048.955942647] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=165.0 ms | preprocess=4.1 ms | infer=123.0 ms | post=38.0 ms | fps_avg=6.06 | fps_out=5.92 | last_total=165.4 ms | last_infer=124.0 ms | processed=26163 | rgb_rx=27467 | tir_rx=27625 | dropped=2762 | cuda_mem=1008/1780 MB
+[INFO] [1776178054.013045122] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=164.9 ms | preprocess=4.1 ms | infer=122.9 ms | post=37.9 ms | fps_avg=6.06 | fps_out=5.93 | last_total=164.2 ms | last_infer=122.8 ms | processed=26193 | rgb_rx=27499 | tir_rx=27657 | dropped=2766 | cuda_mem=1008/1780 MB
+[INFO] [1776178059.016626013] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=165.0 ms | preprocess=4.1 ms | infer=122.9 ms | post=37.9 ms | fps_avg=6.06 | fps_out=6.00 | last_total=165.1 ms | last_infer=123.0 ms | processed=26223 | rgb_rx=27529 | tir_rx=27687 | dropped=2766 | cuda_mem=1008/1780 MB
+[INFO] [1776178064.017629243] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=165.0 ms | preprocess=4.1 ms | infer=122.9 ms | post=38.0 ms | fps_avg=6.06 | fps_out=6.00 | last_total=165.6 ms | last_infer=123.3 ms | processed=26253 | rgb_rx=27562 | tir_rx=27720 | dropped=2772 | cuda_mem=1008/1780 MB
+[INFO] [1776178069.027193282] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=165.3 ms | preprocess=4.1 ms | infer=123.1 ms | post=38.1 ms | fps_avg=6.05 | fps_out=5.99 | last_total=166.3 ms | last_infer=124.1 ms | processed=26283 | rgb_rx=27592 | tir_rx=27750 | dropped=2772 | cuda_mem=1008/1780 MB
+[INFO] [1776178074.121587212] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=166.1 ms | preprocess=4.1 ms | infer=123.7 ms | post=38.2 ms | fps_avg=6.02 | fps_out=5.89 | last_total=164.4 ms | last_infer=122.3 ms | processed=26313 | rgb_rx=27624 | tir_rx=27782 | dropped=2776 | cuda_mem=1008/1780 MB
+[INFO] [1776178079.281256443] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=164.8 ms | preprocess=4.1 ms | infer=122.9 ms | post=37.8 ms | fps_avg=6.07 | fps_out=6.01 | last_total=163.7 ms | last_infer=122.3 ms | processed=26344 | rgb_rx=27656 | tir_rx=27814 | dropped=2778 | cuda_mem=1008/1780 MB
+[INFO] [1776178084.424651526] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=164.6 ms | preprocess=4.1 ms | infer=123.0 ms | post=37.5 ms | fps_avg=6.08 | fps_out=6.03 | last_total=164.3 ms | last_infer=122.8 ms | processed=26375 | rgb_rx=27687 | tir_rx=27845 | dropped=2778 | cuda_mem=1008/1780 MB
+[INFO] [1776178089.574773226] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=164.7 ms | preprocess=4.1 ms | infer=123.1 ms | post=37.5 ms | fps_avg=6.07 | fps_out=6.02 | last_total=165.6 ms | last_infer=124.2 ms | processed=26406 | rgb_rx=27718 | tir_rx=27876 | dropped=2778 | cuda_mem=1008/1780 MB
+[INFO] [1776178094.741412328] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=164.6 ms | preprocess=4.1 ms | infer=123.1 ms | post=37.5 ms | fps_avg=6.07 | fps_out=6.00 | last_total=165.5 ms | last_infer=123.9 ms | processed=26437 | rgb_rx=27750 | tir_rx=27908 | dropped=2780 | cuda_mem=1008/1780 MB
+[INFO] [1776178099.851885206] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=164.7 ms | preprocess=4.1 ms | infer=123.2 ms | post=37.4 ms | fps_avg=6.07 | fps_out=5.87 | last_total=165.1 ms | last_infer=123.3 ms | processed=26467 | rgb_rx=27783 | tir_rx=27941 | dropped=2786 | cuda_mem=1008/1780 MB
+[INFO] [1776178104.883787126] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=164.8 ms | preprocess=4.1 ms | infer=123.2 ms | post=37.5 ms | fps_avg=6.07 | fps_out=5.96 | last_total=165.3 ms | last_infer=123.7 ms | processed=26497 | rgb_rx=27815 | tir_rx=27973 | dropped=2790 | cuda_mem=1008/1780 MB
+[INFO] [1776178109.968654750] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=165.5 ms | preprocess=4.1 ms | infer=123.8 ms | post=37.6 ms | fps_avg=6.04 | fps_out=5.90 | last_total=166.3 ms | last_infer=124.7 ms | processed=26527 | rgb_rx=27846 | tir_rx=28005 | dropped=2793 | cuda_mem=1008/1780 MB
+[INFO] [1776178115.019814651] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=165.7 ms | preprocess=4.1 ms | infer=124.0 ms | post=37.6 ms | fps_avg=6.03 | fps_out=5.94 | last_total=164.7 ms | last_infer=123.1 ms | processed=26557 | rgb_rx=27878 | tir_rx=28037 | dropped=2797 | cuda_mem=1008/1780 MB
+[INFO] [1776178120.043810507] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=164.7 ms | preprocess=4.1 ms | infer=123.2 ms | post=37.5 ms | fps_avg=6.07 | fps_out=5.97 | last_total=164.3 ms | last_infer=122.8 ms | processed=26587 | rgb_rx=27909 | tir_rx=28069 | dropped=2800 | cuda_mem=1008/1780 MB
+[INFO] [1776178125.124612037] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=166.1 ms | preprocess=4.1 ms | infer=123.4 ms | post=38.6 ms | fps_avg=6.02 | fps_out=5.90 | last_total=165.2 ms | last_infer=122.8 ms | processed=26617 | rgb_rx=27941 | tir_rx=28101 | dropped=2804 | cuda_mem=1008/1780 MB
+[INFO] [1776178130.254993241] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=168.3 ms | preprocess=4.1 ms | infer=125.1 ms | post=39.1 ms | fps_avg=5.94 | fps_out=5.85 | last_total=166.2 ms | last_infer=123.9 ms | processed=26647 | rgb_rx=27972 | tir_rx=28132 | dropped=2806 | cuda_mem=1008/1780 MB
+[INFO] [1776178135.263257643] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=167.3 ms | preprocess=4.1 ms | infer=124.9 ms | post=38.3 ms | fps_avg=5.98 | fps_out=5.99 | last_total=164.6 ms | last_infer=122.4 ms | processed=26677 | rgb_rx=28002 | tir_rx=28162 | dropped=2806 | cuda_mem=1008/1780 MB
+[INFO] [1776178140.323480356] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=165.3 ms | preprocess=4.1 ms | infer=123.0 ms | post=38.2 ms | fps_avg=6.05 | fps_out=5.93 | last_total=165.6 ms | last_infer=123.6 ms | processed=26707 | rgb_rx=28034 | tir_rx=28194 | dropped=2810 | cuda_mem=1008/1780 MB
+[INFO] [1776178145.347464099] [cpgfanet_topic_inference]: Rendimiento topic FANet | total=169.0 ms | preprocess=4.2 ms | infer=125.9 ms | post=38.9 ms | fps_avg=5.92 | fps_out=5.77 | last_total=164.3 ms | last_infer=122.0 ms | processed=26736 | rgb_rx=28064 | tir_rx=28223 | dropped=2811 | cuda_mem=1008/1780 MB
+
+## Orin tegrastats tail
+04-14-2026 16:48:50 RAM 9197/30587MB (lfb 4288x4MB) SWAP 0/15294MB (cached 0MB) CPU [8%@2201,2%@2201,3%@2201,100%@2201,81%@2201,14%@2201,14%@2201,23%@2201,7%@2201,13%@2201,13%@2201,100%@2201] EMC_FREQ 0% GR3D_FREQ 99% CV0@-256C CPU@64.625C Tboard@50C SOC2@59.875C Tdiode@51.5C SOC0@60.281C CV1@-256C GPU@60C tj@64.75C SOC1@59.781C CV2@-256C
+04-14-2026 16:48:51 RAM 9199/30587MB (lfb 4288x4MB) SWAP 0/15294MB (cached 0MB) CPU [12%@2201,2%@2201,4%@2201,100%@2201,88%@2201,6%@2201,22%@2201,4%@2201,7%@2201,19%@2201,59%@2201,49%@2201] EMC_FREQ 0% GR3D_FREQ 99% CV0@-256C CPU@64.312C Tboard@50C SOC2@59.812C Tdiode@51.5C SOC0@60.312C CV1@-256C GPU@59.812C tj@64.312C SOC1@59.718C CV2@-256C
+04-14-2026 16:48:52 RAM 9200/30587MB (lfb 4288x4MB) SWAP 0/15294MB (cached 0MB) CPU [14%@2201,19%@2201,12%@2201,100%@2201,88%@2201,27%@2201,13%@2201,8%@2201,6%@2201,11%@2201,6%@2201,100%@2201] EMC_FREQ 0% GR3D_FREQ 95% CV0@-256C CPU@64.406C Tboard@50C SOC2@59.906C Tdiode@51.5C SOC0@60.406C CV1@-256C GPU@59.937C tj@64C SOC1@59.718C CV2@-256C
+04-14-2026 16:48:53 RAM 9200/30587MB (lfb 4288x4MB) SWAP 0/15294MB (cached 0MB) CPU [13%@2201,5%@2201,7%@2201,100%@2201,89%@2201,7%@2201,14%@2201,27%@2201,7%@2201,5%@2201,7%@2201,100%@2201] EMC_FREQ 0% GR3D_FREQ 98% CV0@-256C CPU@64.5C Tboard@50C SOC2@59.937C Tdiode@51.5C SOC0@60.375C CV1@-256C GPU@60.093C tj@64.5C SOC1@59.718C CV2@-256C
+04-14-2026 16:48:54 RAM 9198/30587MB (lfb 4288x4MB) SWAP 0/15294MB (cached 0MB) CPU [11%@2201,2%@2201,4%@2201,100%@2201,88%@2201,2%@2201,13%@2201,12%@2201,91%@2201,6%@2201,18%@2201,21%@2201] EMC_FREQ 0% GR3D_FREQ 99% CV0@-256C CPU@64.281C Tboard@50C SOC2@59.875C Tdiode@51.5C SOC0@60.312C CV1@-256C GPU@60.156C tj@64.281C SOC1@59.687C CV2@-256C
+04-14-2026 16:48:55 RAM 9199/30587MB (lfb 4288x4MB) SWAP 0/15294MB (cached 0MB) CPU [10%@2201,6%@2201,5%@2201,100%@2201,88%@2201,5%@2201,12%@2201,7%@2201,100%@2201,29%@2201,11%@2201,8%@2201] EMC_FREQ 0% GR3D_FREQ 70% CV0@-256C CPU@64.687C Tboard@50C SOC2@59.875C Tdiode@51.5C SOC0@60.218C CV1@-256C GPU@59.968C tj@64.687C SOC1@59.843C CV2@-256C
+04-14-2026 16:48:56 RAM 9199/30587MB (lfb 4288x4MB) SWAP 0/15294MB (cached 0MB) CPU [14%@2201,5%@2201,3%@2201,100%@2201,88%@2201,2%@2201,9%@2201,5%@2201,96%@2201,25%@2201,16%@2201,6%@2201] EMC_FREQ 0% GR3D_FREQ 76% CV0@-256C CPU@64.906C Tboard@50C SOC2@59.937C Tdiode@51.5C SOC0@60.312C CV1@-256C GPU@59.687C tj@64.906C SOC1@59.75C CV2@-256C
+04-14-2026 16:48:57 RAM 9201/30587MB (lfb 4285x4MB) SWAP 0/15294MB (cached 0MB) CPU [12%@2201,6%@2201,2%@2201,100%@2201,88%@2201,6%@2201,6%@2201,6%@2201,100%@2201,19%@2201,14%@2201,8%@2201] EMC_FREQ 0% GR3D_FREQ 86% CV0@-256C CPU@64.187C Tboard@50C SOC2@59.968C Tdiode@51.5C SOC0@60.312C CV1@-256C GPU@59.906C tj@64.187C SOC1@59.906C CV2@-256C
+04-14-2026 16:48:58 RAM 9201/30587MB (lfb 4285x4MB) SWAP 0/15294MB (cached 0MB) CPU [11%@2201,2%@2201,2%@2201,100%@2201,88%@2201,13%@2201,5%@2201,4%@2201,100%@2201,10%@2201,5%@2201,25%@2201] EMC_FREQ 0% GR3D_FREQ 99% CV0@-256C CPU@64.437C Tboard@50C SOC2@59.937C Tdiode@51.5C SOC0@60.312C CV1@-256C GPU@60C tj@64.437C SOC1@59.937C CV2@-256C

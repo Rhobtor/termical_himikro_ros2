@@ -5,7 +5,6 @@ __pycache__/
 .DS_Store
 
 ros2_outputs/
-logs/
 tmp/
 
 .vscode/
