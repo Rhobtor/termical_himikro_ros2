@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.swp
+.DS_Store
+
+.env
+.env.local
+.env.*.local
+
+ros2_outputs/
+logs/
+tmp/
+
+.vscode/

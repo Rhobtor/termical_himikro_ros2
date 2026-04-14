@@ -1,0 +1,53 @@
+cpgfanet_dataset_replay:
+  ros__parameters:
+    rgb_image_path: /workspace/CPGFANet/rgb_t_pipeline_sar/mfnet/rgb_images/task_0001.png
+    thermal_image_path: /workspace/CPGFANet/rgb_t_pipeline_sar/mfnet/tir_images/task_0001.png
+    rgb_image_dir: /workspace/CPGFANet/rgb_t_pipeline_sar/mfnet/rgb_images
+    thermal_image_dir: /workspace/CPGFANet/rgb_t_pipeline_sar/mfnet/tir_images
+    input_width: 640
+    input_height: 480
+    target_fps: 20.0
+    loop_dataset: true
+    max_images: 0
+    preload_images: true
+    rgb_topic: fanet/input/rgb
+    thermal_topic: fanet/input/thermal
+    log_every_n_frames: 100
+    perf_log_period_s: 2.0
+
+cpgfanet_topic_inference:
+  ros__parameters:
+    repo_root: /workspace/CPGFANet
+    checkpoint_path: /workspace/CPGFANet/weights/160.pth
+    model_module: model.CrissCrossAttention_dual_2_sinINF
+    model_class: FEANet
+    device: cuda:0
+    input_width: 640
+    input_height: 480
+    num_classes: 12
+    rgb_scale: 255.0
+    thermal_scale: 255.0
+    overlay_alpha: 0.45
+    rgb_topic: fanet/input/rgb
+    thermal_topic: fanet/input/thermal
+    mask_topic: fanet/segmentation/mask_indices
+    color_topic: fanet/segmentation/mask_color
+    overlay_topic: fanet/segmentation/overlay
+    person_centroid_topic: fanet/person_centroid
+    publish_mask: true
+    publish_color: true
+    publish_overlay: true
+    publish_person_centroid: true
+    person_class_index: 2
+    person_min_pixels: 25
+    save_outputs: false
+    output_dir: /workspace/CPGFANet/ros2_outputs/topic_inference
+    enable_perf_logging: true
+    perf_log_period_s: 5.0
+    perf_window: 50
+    perf_warmup_runs: 3
+    enable_amp: false
+    enable_cudnn_benchmark: true
+    enable_cuda_sync_timing: false
+    enable_gpu_telemetry: true
+    max_pending_pairs: 2

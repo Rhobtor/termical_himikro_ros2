@@ -1,0 +1,16 @@
+ARG BASE_IMAGE=cpgfanet_ros2_jetson:humble
+FROM ${BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+SHELL ["/bin/bash", "-c"]
+
+RUN rm -f /etc/apt/sources.list.d/ros2.list /etc/apt/sources.list.d/ros-latest.list || true && \
+    apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace/deploy
+COPY jetson_fanet_live_stack/thermal_rtsp_publisher.py /workspace/deploy/thermal_rtsp_publisher.py
+
+CMD ["bash"]

@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.swp
+.DS_Store
+
+jetson_fanet_live_stack/.env
+jetson_fanet_live_stack/__pycache__/
+
+fanet_rso2/CPGFANet/weights/*.pth
+fanet_rso2/CPGFANet/ros2_outputs/
+fanet_rso2/CPGFANet/**/__pycache__/
+
+build/
+install/
+log/

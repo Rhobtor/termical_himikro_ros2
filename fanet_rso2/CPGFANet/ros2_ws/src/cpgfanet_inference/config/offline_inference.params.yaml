@@ -1,0 +1,35 @@
+cpgfanet_offline_inference:
+  ros__parameters:
+    repo_root: /workspace/CPGFANet
+    checkpoint_path: /workspace/CPGFANet/weights/160.pth
+    model_module: model.CrissCrossAttention_dual_2_sinINF
+    model_class: FEANet
+    rgb_image_path: /workspace/CPGFANet/rgb_t_pipeline_sar/mfnet/rgb_images/task_0001.png
+    thermal_image_path: /workspace/CPGFANet/rgb_t_pipeline_sar/mfnet/tir_images/task_0001.png
+    rgb_image_dir: ''
+    thermal_image_dir: ''
+    output_dir: /workspace/CPGFANet/ros2_outputs/offline_inference
+    device: cuda:0
+    input_width: 640
+    input_height: 480
+    num_classes: 12
+    rgb_scale: 255.0
+    thermal_scale: 255.0
+    overlay_alpha: 0.45
+    run_once: false
+    loop_hz: 10.0
+    loop_dataset: false
+    max_images: 0
+    save_outputs: true
+    display_results: false
+    display_wait_ms: 1
+    display_window_name: CPGFANet overlay
+    enable_perf_logging: true
+    perf_log_period_s: 5.0
+    perf_window: 50
+    perf_warmup_runs: 3
+    preload_images: true
+    preprocess_on_load: false
+    enable_amp: false
+    enable_cudnn_benchmark: true
+    enable_cuda_sync_timing: false

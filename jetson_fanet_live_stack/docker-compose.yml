@@ -1,0 +1,139 @@
+services:
+  zed_wrapper_2:
+    build:
+      context: ../zed_wrapper/zed-ros2-wrapper-humble-v4.1.4/docker
+      dockerfile: Dockerfile.l4t-humble
+      args:
+        IMAGE_NAME: ${JETSON_ROS_BASE_IMAGE}
+        L4T_VERSION: ${L4T_VERSION}
+        L4T_MAJOR: ${L4T_MAJOR}
+        L4T_MINOR: ${L4T_MINOR}
+        ZED_SDK_MAJOR: ${ZED_SDK_MAJOR}
+        ZED_SDK_MINOR: ${ZED_SDK_MINOR}
+        ZED_SDK_PATCH: ${ZED_SDK_PATCH}
+    image: ${ZED_IMAGE}
+    container_name: zed_wrapper_2
+    network_mode: host
+    ipc: host
+    pid: host
+    privileged: true
+    runtime: nvidia
+    restart: unless-stopped
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION}
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+    volumes:
+      - /dev:/dev
+      - /usr/local/zed/resources:/usr/local/zed/resources
+      - /usr/local/zed/settings:/usr/local/zed/settings
+    command: >
+      bash -lc "
+      source /opt/ros/humble/install/setup.bash &&
+      source /root/ros2_ws/install/setup.bash &&
+      ros2 launch zed_wrapper zed_camera.launch.py
+      camera_model:=${ZED_CAMERA_MODEL}
+      camera_name:=${ZED_CAMERA_NAME}
+      node_name:=${ZED_NODE_NAME}
+      publish_tf:=false
+      publish_map_tf:=false
+      publish_imu_tf:=false
+      "
+
+  hikmicro_thermal:
+    build:
+      context: ..
+      dockerfile: jetson_fanet_live_stack/Dockerfile.hikmicro
+      args:
+        BASE_IMAGE: ${JETSON_ROS_BASE_IMAGE}
+    image: ${HIKMICRO_IMAGE}
+    container_name: hikmicro_thermal
+    network_mode: host
+    ipc: host
+    pid: host
+    privileged: true
+    runtime: nvidia
+    restart: unless-stopped
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION}
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+    volumes:
+      - ./hikmicro_ffmpeg_pipe.yaml:/workspace/deploy/hikmicro_ffmpeg_pipe.yaml:ro
+    command: >
+      bash -lc "
+      source /opt/ros/humble/install/setup.bash &&
+      source /workspace/hikmicro_ws/install/setup.bash &&
+      ros2 run hikmicro_thermal_camera termical_camera_ffmpeg_pipe
+      --ros-args
+      --params-file /workspace/deploy/hikmicro_ffmpeg_pipe.yaml
+      -p url:=${HIKMICRO_RTSP_URL}
+      -p topic_name:=${FANET_THERMAL_TOPIC}
+      -p transport:=${HIKMICRO_TRANSPORT}
+      -p width:=${HIKMICRO_WIDTH}
+      -p height:=${HIKMICRO_HEIGHT}
+      -p fps:=${HIKMICRO_FPS}
+      "
+
+  fanet_rgb_bridge:
+    image: ${FANET_IMAGE}
+    container_name: fanet_rgb_bridge
+    network_mode: host
+    ipc: host
+    pid: host
+    runtime: nvidia
+    restart: unless-stopped
+    depends_on:
+      - zed_wrapper_2
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION}
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+    volumes:
+      - ./:/workspace/deploy:ro
+    command: >
+      bash -lc "
+      source /opt/ros/humble/install/setup.bash &&
+      python3 /workspace/deploy/rgb_topic_adapter.py
+      --input ${ZED_RGB_TOPIC}
+      --output ${FANET_RGB_TOPIC}
+      "
+
+  danet_ros2:
+    build:
+      context: ../fanet_rso2/CPGFANet
+      dockerfile: docker/jetson/Dockerfile
+      args:
+        BASE_IMAGE: ${FANET_BASE_IMAGE}
+    image: ${FANET_IMAGE}
+    container_name: danet_ros2
+    network_mode: host
+    ipc: host
+    pid: host
+    runtime: nvidia
+    restart: unless-stopped
+    depends_on:
+      - fanet_rgb_bridge
+      - hikmicro_thermal
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION}
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+    volumes:
+      - ./:/workspace/deploy:ro
+      - ${FANET_OUTPUT_DIR}:/workspace/CPGFANet/ros2_outputs
+    command: >
+      bash -lc "
+      source /opt/ros/humble/install/setup.bash &&
+      cd /workspace/CPGFANet/ros2_ws &&
+      source install/setup.bash &&
+      ros2 run cpgfanet_inference topic_inference
+      --ros-args
+      --params-file /workspace/deploy/fanet_live.params.yaml
+      -p rgb_topic:=${FANET_RGB_TOPIC}
+      -p thermal_topic:=${FANET_THERMAL_TOPIC}
+      "
