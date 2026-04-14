@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
@@ -19,11 +20,11 @@ public:
   {
     url_ = this->declare_parameter<std::string>(
       "url",
-      "rtsp://admin:laentiec27@192.168.1.64:554/Streaming/Channels/101");
+      "rtsp://admin:laentiec27@192.168.2.64:554/Streaming/Channels/101");
     ffmpeg_path_ = this->declare_parameter<std::string>("ffmpeg_path", "/usr/bin/ffmpeg");
     frame_id_ = this->declare_parameter<std::string>("frame_id", "thermal_optical_frame");
     topic_name_ = this->declare_parameter<std::string>("topic_name", "/thermal/image_raw");
-    transport_ = this->declare_parameter<std::string>("transport", "udp");
+    transport_ = this->declare_parameter<std::string>("transport", "tcp");
     width_ = this->declare_parameter<int>("width", 640);
     height_ = this->declare_parameter<int>("height", 512);
     fps_ = this->declare_parameter<double>("fps", 25.0);
@@ -33,6 +34,12 @@ public:
 
     if (width_ <= 0 || height_ <= 0) {
       throw std::invalid_argument("width y height deben ser mayores que cero");
+    }
+
+    if (::access(ffmpeg_path_.c_str(), X_OK) != 0) {
+      throw std::runtime_error(
+        "ffmpeg no disponible en " + ffmpeg_path_ +
+        ". Usa una imagen que incluya ffmpeg, por ejemplo hikmicro_thermal_ros2:jetson");
     }
 
     pub_ = this->create_publisher<sensor_msgs::msg::Image>(
@@ -84,7 +91,7 @@ private:
       shellEscape(ffmpeg_path_) +
       " -nostdin -hide_banner -loglevel " + shellEscape(log_level_) +
       " -rtsp_transport " + shellEscape(transport_) +
-      " -fflags nobuffer+discardcorrupt -flags low_delay -an -sn -dn" +
+      " -probesize 32 -analyzeduration 0 -fflags discardcorrupt -an -sn -dn" +
       " -i " + shellEscape(url_) +
       " -vf " + shellEscape(filter) +
       " -pix_fmt gray -vsync 0 -f rawvideo pipe:1 2>/dev/null";

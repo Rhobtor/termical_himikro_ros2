@@ -1,6 +1,6 @@
 /**:
   ros__parameters:
-    url: "rtsp://admin:laentiec27@192.168.1.64:554/Streaming/Channels/101"
+    url: "rtsp://admin:laentiec27@192.168.2.64:554/Streaming/Channels/101"
     frame_id: "thermal_optical_frame"
     topic_name: "/thermal/image_raw"
     fps: 10.0

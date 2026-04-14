@@ -1,10 +1,10 @@
 /**:
   ros__parameters:
-    url: "rtsp://admin:laentiec27@192.168.1.64:554/Streaming/Channels/101"
+    url: "rtsp://admin:laentiec27@192.168.2.64:554/Streaming/Channels/101"
     ffmpeg_path: "/usr/bin/ffmpeg"
     frame_id: "thermal_optical_frame"
     topic_name: "/thermal/image_raw"
-    transport: "udp"      # udp | tcp
+    transport: "tcp"      # udp | tcp
     width: 640
     height: 512
     fps: 25.0

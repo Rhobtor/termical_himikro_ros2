@@ -21,7 +21,7 @@ public:
   {
     url_ = this->declare_parameter<std::string>(
       "url",
-      "rtsp://admin:laentiec27@192.168.1.64:554/Streaming/Channels/101");
+      "rtsp://admin:laentiec27@192.168.2.64:554/Streaming/Channels/101");
 
     frame_id_ = this->declare_parameter<std::string>("frame_id", "thermal_optical_frame");
     topic_name_ = this->declare_parameter<std::string>("topic_name", "/thermal/image_raw");
@@ -92,8 +92,10 @@ private:
     }
 
     cap_.set(cv::CAP_PROP_BUFFERSIZE, 1);
+  #if (CV_VERSION_MAJOR > 4) || (CV_VERSION_MAJOR == 4 && CV_VERSION_MINOR >= 6)
     cap_.set(cv::CAP_PROP_OPEN_TIMEOUT_MSEC, 2000.0);
     cap_.set(cv::CAP_PROP_READ_TIMEOUT_MSEC, 1000.0);
+  #endif
     return true;
   }
 
