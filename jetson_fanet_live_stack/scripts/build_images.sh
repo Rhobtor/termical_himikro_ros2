@@ -6,9 +6,7 @@ ZED_DOCKER_DIR="${ROOT_DIR}/../zed_wrapper/zed-ros2-wrapper-humble-v4.1.4/docker
 
 cd "${ROOT_DIR}"
 
-set -a
-source ./.env
-set +a
+source "${ROOT_DIR}/scripts/config.sh"
 
 echo "[1/3] Preparando fuentes de ZED para Docker"
 if [[ "${ZED_BUILD}" == "1" ]]; then

@@ -28,7 +28,7 @@ Copiar completo:
 Esto ya contiene:
 
 - scripts de arranque/parada
-- configuracion `.env.example`
+- configuracion fija en `scripts/config.sh`
 - params del modelo
 - visores
 - puente RGB
@@ -108,7 +108,7 @@ my_robot_stack/
 │   ├── hikmicro.md
 │   └── mppi.md
 ├── config/
-│   ├── .env.example
+│   ├── scripts/config.sh
 │   ├── fanet_fast.params.yaml
 │   └── fanet_live.params.yaml
 ├── deploy/
@@ -209,7 +209,7 @@ Tu repo final deberia permitir estas tres cosas desde cero:
 Antes de considerar el monorepo terminado, deberias tener:
 
 1. un `README.md` raiz con instalacion completa
-2. un `.env.example` limpio
+2. un `scripts/config.sh` claro y documentado
 3. una carpeta `docs/` con arquitectura y flujo de topics
 4. una forma de declarar dependencias externas obligatorias
 5. una carpeta clara para `weights/`

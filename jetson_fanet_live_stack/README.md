@@ -71,8 +71,7 @@ Los scripts usan `docker build` y `docker run` directos, así que no dependen de
 
 ### Configuracion
 
-- `.env`: variables principales del despliegue local. No se debe subir con credenciales reales.
-- `.env.example`: plantilla segura para recrear `.env` en otra maquina.
+- `scripts/config.sh`: configuracion fija de la stack. Aqui estan RTSP, topics, imagenes y rutas.
 - `fanet_fast.params.yaml`: perfil rapido del modelo, recomendado para tiempo real.
 - `fanet_live.params.yaml`: perfil mas pesado, mas cerca del flujo original.
 
@@ -105,6 +104,7 @@ Los scripts usan `docker build` y `docker run` directos, así que no dependen de
 ./scripts/logs.sh hikmicro_thermal
 ./scripts/open_fanet_viewers.sh
 ./scripts/open_person_overlay_viewer.sh
+./scripts/capture_runtime_report.sh 15
 ./scripts/monitor_fanet.sh stats
 ./scripts/monitor_fanet.sh stats-once
 ./scripts/monitor_fanet.sh perf
@@ -140,7 +140,7 @@ Se incluye `docker-compose.yml` como referencia y para hosts donde sí exista Co
 
 ## Variables a revisar antes de usar
 
-Edita `.env` si necesitas cambiar:
+Edita `scripts/config.sh` si necesitas cambiar:
 
 - `ZED_CAMERA_MODEL`
 - `ZED_RGB_TOPIC`

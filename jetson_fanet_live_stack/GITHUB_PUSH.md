@@ -43,16 +43,12 @@ git remote add origin git@github.com:usuario/jetson-fanet-live-stack.git
 git push -u origin main
 ```
 
-## 6. Versionar tambien los cambios en los repos base
+## Nota
 
-Si quieres conservar el trabajo completo, revisa tambien estos repos aparte:
+En la version unificada actual, el repo principal recomendado ya es:
 
 ```bash
-cd /home/isa/Documents/Luis/fanet_rso2/CPGFANet
-git status
-
 cd /home/isa/Documents/Luis/himikro_termical/termical_himikro_ros2
-git status
 ```
 
-Lo recomendable es hacer commits separados en cada repo, porque son proyectos distintos.
+La carpeta `jetson_fanet_live_stack/` queda como subdirectorio interno del mismo repo.

@@ -7,7 +7,7 @@ Esta carpeta contiene el despliegue ROS 2 + Docker que une ZED, Hikmicro y FANet
 - `README.md`: vision general, arranque, verificacion y topics.
 - `REPO_MAP.md`: mapa rapido de archivos y responsabilidades.
 - `GITHUB_PUSH.md`: pasos para inicializar Git y subir a GitHub.
-- `.env`: configuracion principal del stack.
+- `scripts/config.sh`: configuracion principal fija del stack.
 - `fanet_fast.params.yaml`: perfil rapido del modelo, pensado para mantener alrededor de 6 fps.
 - `fanet_live.params.yaml`: perfil mas pesado/original del modelo.
 - `docker-compose.yml`: referencia, no es el flujo principal validado.
@@ -51,6 +51,6 @@ Estos cambios no viven en esta carpeta. Si quieres conservar todo, tambien debes
 
 ## Flujo recomendado de versionado
 
-1. Versionar esta carpeta como repo propio de despliegue.
-2. Hacer commits separados en los repos `CPGFANet` y `termical_himikro_ros2` si quieres conservar tambien los cambios base.
+1. Esta carpeta ya vive dentro del repo principal `termical_himikro_ros2`.
+2. La configuracion de despliegue esta en `scripts/config.sh`, no en `.env`.
 3. No mezclar benchmarks temporales ni `__pycache__`.

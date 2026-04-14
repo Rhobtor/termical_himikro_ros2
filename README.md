@@ -28,7 +28,7 @@ En:
 Aqui estan:
 
 - scripts Docker
-- configuracion `.env.example`
+- configuracion fija en `scripts/config.sh`
 - sincronizacion RGB/termica
 - visores
 - persona 3D con profundidad ZED
