@@ -11,6 +11,7 @@ cpgfanet_topic_inference:
     rgb_scale: 255.0
     thermal_scale: 255.0
     overlay_alpha: 0.45
+    overlay_semantic_blend: false
     rgb_topic: /fanet/input/rgb
     thermal_topic: /fanet/input/thermal
     mask_topic: /fanet/segmentation/mask_indices
@@ -26,7 +27,11 @@ cpgfanet_topic_inference:
     publish_person_centroids: true
     publish_person_count: true
     person_class_index: 2
-    person_min_pixels: 25
+    person_min_pixels: 120
+    person_min_bbox_width: 10
+    person_min_bbox_height: 20
+    person_morph_open_kernel: 3
+    person_morph_close_kernel: 7
     draw_person_instances: true
     save_outputs: false
     output_dir: /workspace/CPGFANet/ros2_outputs/live_inference

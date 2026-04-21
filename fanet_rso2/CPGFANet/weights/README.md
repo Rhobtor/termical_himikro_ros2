@@ -16,3 +16,10 @@ Importante:
 Ruta esperada dentro del contenedor:
 
 - `/workspace/CPGFANet/weights/160.pth`
+
+Ruta esperada en el host con esta stack:
+
+- `jetson_fanet_live_stack/../fanet_rso2/CPGFANet/weights/160.pth`
+
+No hace falta reconstruir la imagen para actualizar o restaurar el peso.
+`scripts/up.sh` monta esta carpeta del host dentro del contenedor automaticamente.

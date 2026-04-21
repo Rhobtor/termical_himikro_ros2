@@ -48,6 +48,7 @@ class TopicInferenceNode(Node):
         self.declare_parameter('rgb_scale', 255.0)
         self.declare_parameter('thermal_scale', 255.0)
         self.declare_parameter('overlay_alpha', 0.45)
+        self.declare_parameter('overlay_semantic_blend', False)
         self.declare_parameter('rgb_topic', 'fanet/input/rgb')
         self.declare_parameter('thermal_topic', 'fanet/input/thermal')
         self.declare_parameter('mask_topic', 'fanet/segmentation/mask_indices')
@@ -64,6 +65,10 @@ class TopicInferenceNode(Node):
         self.declare_parameter('publish_person_count', True)
         self.declare_parameter('person_class_index', 2)
         self.declare_parameter('person_min_pixels', 25)
+        self.declare_parameter('person_min_bbox_width', 8)
+        self.declare_parameter('person_min_bbox_height', 16)
+        self.declare_parameter('person_morph_open_kernel', 3)
+        self.declare_parameter('person_morph_close_kernel', 7)
         self.declare_parameter('draw_person_instances', True)
         self.declare_parameter('save_outputs', False)
         self.declare_parameter('output_dir', '/tmp/cpgfanet_topic_outputs')
@@ -321,7 +326,10 @@ class TopicInferenceNode(Node):
         if bool(self.get_parameter('publish_color').value) or bool(self.get_parameter('publish_overlay').value) or self._save_outputs:
             color_mask = colorize_mask(mask)
         if bool(self.get_parameter('publish_overlay').value) or self._save_outputs:
-            overlay = blend_overlay(rgb_image=rgb_resized, color_mask=color_mask, alpha=self._overlay_alpha)
+            if bool(self.get_parameter('overlay_semantic_blend').value):
+                overlay = blend_overlay(rgb_image=rgb_resized, color_mask=color_mask, alpha=self._overlay_alpha)
+            else:
+                overlay = rgb_resized.copy()
             if bool(self.get_parameter('draw_person_instances').value) and person_instances:
                 overlay = self._draw_person_instances(overlay, person_instances)
 
@@ -428,7 +436,20 @@ class TopicInferenceNode(Node):
     def _extract_person_instances(self, mask: np.ndarray):
         person_class_index = int(self.get_parameter('person_class_index').value)
         min_pixels = max(1, int(self.get_parameter('person_min_pixels').value))
+        min_bbox_width = max(1, int(self.get_parameter('person_min_bbox_width').value))
+        min_bbox_height = max(1, int(self.get_parameter('person_min_bbox_height').value))
         binary = (mask == person_class_index).astype(np.uint8)
+        if not np.any(binary):
+            return []
+
+        open_kernel_size = max(0, int(self.get_parameter('person_morph_open_kernel').value))
+        close_kernel_size = max(0, int(self.get_parameter('person_morph_close_kernel').value))
+        if open_kernel_size > 1:
+            open_kernel = np.ones((open_kernel_size, open_kernel_size), dtype=np.uint8)
+            binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, open_kernel)
+        if close_kernel_size > 1:
+            close_kernel = np.ones((close_kernel_size, close_kernel_size), dtype=np.uint8)
+            binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, close_kernel)
         if not np.any(binary):
             return []
 
@@ -442,6 +463,8 @@ class TopicInferenceNode(Node):
             top = int(stats[label, cv2.CC_STAT_TOP])
             width = int(stats[label, cv2.CC_STAT_WIDTH])
             height = int(stats[label, cv2.CC_STAT_HEIGHT])
+            if width < min_bbox_width or height < min_bbox_height:
+                continue
             centroid_x = float(centroids[label][0])
             centroid_y = float(centroids[label][1])
             component_mask = (labels == label).astype(np.uint8)
@@ -497,23 +520,8 @@ class TopicInferenceNode(Node):
         ]
         for index, instance in enumerate(person_instances, start=1):
             color = palette[(index - 1) % len(palette)]
-            component_mask = (instance['mask'] * 255).astype(np.uint8)
-            contours, _ = cv2.findContours(component_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            cv2.drawContours(output, contours, -1, color, 2)
-            left, top, width, height = instance['bbox']
             center = (int(round(instance['centroid_x'])), int(round(instance['centroid_y'])))
-            cv2.drawMarker(output, center, color, markerType=cv2.MARKER_CROSS, markerSize=18, thickness=2)
-            cv2.putText(
-                output,
-                f'P{index} a={instance["area"]}',
-                (left, max(18, top - 6)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.55,
-                color,
-                2,
-                cv2.LINE_AA,
-            )
-            cv2.rectangle(output, (left, top), (left + width, top + height), color, 1)
+            cv2.drawMarker(output, center, color, markerType=cv2.MARKER_CROSS, markerSize=20, thickness=2)
         return output
 
     def _build_gpu_memory_message(self) -> str:

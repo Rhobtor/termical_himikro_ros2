@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+source "${ROOT_DIR}/scripts/config.sh"
 IMAGE=${IMAGE:-hikmicro_thermal_ros2:jetson}
 DISPLAY_VALUE=${DISPLAY:-:0}
 XAUTHORITY_VALUE=${XAUTHORITY:-$HOME/.Xauthority}
@@ -18,8 +19,8 @@ DOCKER_ARGS=(
   --ipc host
   --pid host
   --privileged
-  -e ROS_DOMAIN_ID=30
-  -e RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+  -e ROS_DOMAIN_ID=${ROS_DOMAIN_ID}
+  -e RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION}
   -e DISPLAY=${DISPLAY_VALUE}
   -v "${ROOT_DIR}:/workspace/deploy:ro"
 )

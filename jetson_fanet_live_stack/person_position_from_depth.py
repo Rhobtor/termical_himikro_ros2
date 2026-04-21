@@ -7,12 +7,13 @@ from typing import Optional
 
 import numpy as np
 import rclpy
+from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseArray
 from geometry_msgs.msg import PointStamped
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float32MultiArray
 
 
 class PersonPositionFromDepth(Node):
@@ -33,6 +34,9 @@ class PersonPositionFromDepth(Node):
         self._camera_pub = self.create_publisher(PointStamped, args.camera_position_topic, 10)
         self._robot_pub = self.create_publisher(PointStamped, args.robot_position_topic, 10)
         self._distance_pub = self.create_publisher(Float32, args.distance_topic, 10)
+        self._camera_array_pub = self.create_publisher(PoseArray, args.camera_positions_topic, 10)
+        self._robot_array_pub = self.create_publisher(PoseArray, args.robot_positions_topic, 10)
+        self._distance_array_pub = self.create_publisher(Float32MultiArray, args.distances_topic, 10)
 
         self.create_subscription(Image, args.depth_topic, self._on_depth, sensor_qos)
         self.create_subscription(CameraInfo, args.camera_info_topic, self._on_camera_info, sensor_qos)
@@ -64,11 +68,12 @@ class PersonPositionFromDepth(Node):
             return
 
         candidates = self._last_centroids or [(float(msg.point.x), float(msg.point.y), float(msg.point.z))]
-        best = self._select_closest_candidate(candidates)
-        if best is None:
+        projections = self._project_candidates(candidates)
+        if not projections:
             return
 
-        x_cam, y_cam, z_cam = best
+        first_projection = projections[0]
+        x_cam, y_cam, z_cam = first_projection['camera_point']
 
         camera_point = PointStamped()
         camera_point.header.stamp = msg.header.stamp
@@ -90,21 +95,71 @@ class PersonPositionFromDepth(Node):
         distance.data = float(math.sqrt(x_cam * x_cam + y_cam * y_cam + z_cam * z_cam))
         self._distance_pub.publish(distance)
 
-    def _select_closest_candidate(self, candidates: list[tuple[float, float, float]]) -> Optional[tuple[float, float, float]]:
-        best_point = None
-        best_distance = None
+        camera_array = PoseArray()
+        camera_array.header.stamp = msg.header.stamp
+        camera_array.header.frame_id = self._depth_msg.header.frame_id or msg.header.frame_id
 
-        for image_x, image_y, _area in candidates:
+        robot_array = PoseArray()
+        robot_array.header.stamp = msg.header.stamp
+        robot_array.header.frame_id = self._args.robot_frame_id
+
+        distance_array = Float32MultiArray()
+        for candidate in candidates:
+            pose = Pose()
+            pose.position.x = math.nan
+            pose.position.y = math.nan
+            pose.position.z = math.nan
+            camera_array.poses.append(pose)
+
+            pose = Pose()
+            pose.position.x = math.nan
+            pose.position.y = math.nan
+            pose.position.z = math.nan
+            robot_array.poses.append(pose)
+            distance_array.data.append(float('nan'))
+
+        for projection in projections:
+            index = int(projection['index'])
+            x_cam, y_cam, z_cam = projection['camera_point']
+            x_robot, y_robot, z_robot = projection['robot_point']
+            distance_m = projection['distance_m']
+
+            camera_array.poses[index].position.x = float(x_cam)
+            camera_array.poses[index].position.y = float(y_cam)
+            camera_array.poses[index].position.z = float(z_cam)
+            robot_array.poses[index].position.x = float(x_robot)
+            robot_array.poses[index].position.y = float(y_robot)
+            robot_array.poses[index].position.z = float(z_robot)
+            distance_array.data[index] = float(distance_m)
+
+        self._camera_array_pub.publish(camera_array)
+        self._robot_array_pub.publish(robot_array)
+        self._distance_array_pub.publish(distance_array)
+
+    def _project_candidates(self, candidates: list[tuple[float, float, float]]) -> list[dict[str, object]]:
+        projections: list[dict[str, object]] = []
+
+        for index, candidate in enumerate(candidates):
+            image_x, image_y, _area = candidate
             projected = self._project_image_centroid(float(image_x), float(image_y))
             if projected is None:
                 continue
-            x_cam, y_cam, z_cam = projected
-            distance = math.sqrt(x_cam * x_cam + y_cam * y_cam + z_cam * z_cam)
-            if best_distance is None or distance < best_distance:
-                best_distance = distance
-                best_point = projected
 
-        return best_point
+            x_cam, y_cam, z_cam = projected
+            x_robot = float(z_cam)
+            y_robot = float(-x_cam)
+            z_robot = float(-y_cam)
+            distance_m = math.sqrt(x_cam * x_cam + y_cam * y_cam + z_cam * z_cam)
+            projections.append(
+                {
+                    'index': index,
+                    'camera_point': (float(x_cam), float(y_cam), float(z_cam)),
+                    'robot_point': (x_robot, y_robot, z_robot),
+                    'distance_m': float(distance_m),
+                }
+            )
+
+        return projections
 
     def _project_image_centroid(self, centroid_x: float, centroid_y: float) -> Optional[tuple[float, float, float]]:
         depth = self._depth_msg
@@ -174,8 +229,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--depth-topic', default='/zed/zed_node/depth/depth_registered')
     parser.add_argument('--camera-info-topic', default='/zed/zed_node/depth/camera_info')
     parser.add_argument('--camera-position-topic', default='/fanet/person_position_camera')
+    parser.add_argument('--camera-positions-topic', default='/fanet/person_positions_camera')
     parser.add_argument('--robot-position-topic', default='/fanet/person_position_robot')
+    parser.add_argument('--robot-positions-topic', default='/fanet/person_positions_robot')
     parser.add_argument('--distance-topic', default='/fanet/person_distance')
+    parser.add_argument('--distances-topic', default='/fanet/person_distances')
     parser.add_argument('--robot-frame-id', default='robot_same_origin_frame')
     parser.add_argument('--search-radius', type=int, default=3)
     parser.add_argument('--max-depth-m', type=float, default=20.0)

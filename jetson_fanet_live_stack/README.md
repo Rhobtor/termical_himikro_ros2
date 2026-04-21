@@ -33,6 +33,7 @@ Este despliegue deja tres entradas ROS 2 conectadas por Docker:
 
 - RGB bruto normalizado: `/fanet/raw/rgb`
 - Térmica bruta: `/fanet/raw/thermal`
+- Térmica bruta comprimida: `/fanet/raw/thermal/compressed`
 
 ## Topics de salida
 
@@ -40,9 +41,18 @@ Este despliegue deja tres entradas ROS 2 conectadas por Docker:
 - `/fanet/segmentation/mask_color`
 - `/fanet/segmentation/overlay`
 - `/fanet/person_centroid`
+- `/fanet/person_centroids`
+- `/fanet/person_count`
 - `/fanet/person_position_camera`
+- `/fanet/person_positions_camera`
 - `/fanet/person_position_robot`
 - `/fanet/person_distance`
+- `/fanet/person_positions_robot`
+- `/fanet/person_distances`
+- `/fanet/gui/rgb_annotated`
+- `/fanet/gui/thermal_annotated`
+- `/fanet/gui/rgb_annotated/compressed`
+- `/fanet/gui/thermal_annotated/compressed`
 
 `/fanet/person_centroid` no da distancia real. Publica:
 
@@ -53,8 +63,25 @@ Este despliegue deja tres entradas ROS 2 conectadas por Docker:
 La distancia y posicion 3D reales se publican en:
 
 - `/fanet/person_position_camera`: `geometry_msgs/PointStamped` en frame optico de camara
+- `/fanet/person_positions_camera`: `geometry_msgs/PoseArray` con una entrada por cada deteccion en el mismo orden de `/fanet/person_centroids`
 - `/fanet/person_position_robot`: `geometry_msgs/PointStamped` en frame tipo robot con mismo origen y ejes `x` delante, `y` izquierda, `z` arriba
 - `/fanet/person_distance`: `std_msgs/Float32` con distancia euclidea en metros
+- `/fanet/person_positions_robot`: `geometry_msgs/PoseArray` con posicion local de todas las personas detectadas
+- `/fanet/person_distances`: `std_msgs/Float32MultiArray` con una distancia por cada persona detectada
+
+Para la GUI tambien quedan disponibles:
+
+- `/fanet/gui/rgb_annotated`: imagen RGB de ZED con todas las personas detectadas anotadas
+- `/fanet/gui/thermal_annotated`: imagen termica coloreada con las mismas anotaciones
+- `/fanet/gui/rgb_annotated/compressed`: version JPEG para enlaces VPN o bajo ancho de banda
+- `/fanet/gui/thermal_annotated/compressed`: version JPEG para enlaces VPN o bajo ancho de banda
+
+Para transmision remota conviene priorizar:
+
+- `/zed/zed_node/left/image_rect_color/compressed` para RGB original de ZED
+- `/fanet/raw/thermal/compressed` para termica original
+- `/fanet/gui/rgb_annotated/compressed` y `/fanet/gui/thermal_annotated/compressed` para la GUI
+- `/fanet/person_centroids`, `/fanet/person_positions_robot` y `/fanet/person_distances` para datos ligeros de seguimiento
 
 ## Arranque
 
@@ -75,12 +102,22 @@ Los scripts usan `docker build` y `docker run` directos, así que no dependen de
 - `fanet_fast.params.yaml`: perfil rapido del modelo, recomendado para tiempo real.
 - `fanet_live.params.yaml`: perfil mas pesado, mas cerca del flujo original.
 
+### Pesos del modelo
+
+- El checkpoint esperado es `160.pth`.
+- Debe existir en `../fanet_rso2/CPGFANet/weights/160.pth`.
+- `scripts/up.sh` monta esa carpeta dentro del contenedor y falla con un mensaje claro si falta el archivo.
+- Para cambiar el nombre o la ruta, edita `FANET_CHECKPOINT_NAME` o `FANET_HOST_WEIGHTS_DIR` en `scripts/config.sh`.
+
 ### Nodos auxiliares del despliegue
 
 - `rgb_topic_adapter.py`: adapta el topic RGB de ZED a `rgb8`.
 - `thermal_rtsp_publisher.py`: publica la imagen termica desde RTSP.
+- `thermal_rtsp_publisher.py`: publica la termica en crudo y en JPEG comprimido.
 - `pair_sync_bridge.py`: resincroniza RGB y termica para que FANet procese pares validos.
-- `person_position_from_depth.py`: convierte deteccion 2D de persona a posicion 3D y distancia usando ZED.
+- `person_position_from_depth.py`: convierte cada deteccion 2D de persona a posicion 3D y distancia usando ZED.
+- `gui_topics_publisher.py`: publica RGB y termica anotados para consumirlos desde una GUI remota.
+- `gui_topics_publisher.py`: publica RGB y termica anotados tanto en crudo como comprimidos.
 - `person_overlay_viewer.py`: visor con overlay y personas dibujadas.
 - `topic_fps_probe.py`: utilidad de medida de FPS ROS 2.
 
@@ -147,6 +184,7 @@ Edita `scripts/config.sh` si necesitas cambiar:
 - `HIKMICRO_RTSP_URL`
 - `ROS_DOMAIN_ID`
 - `FANET_PARAMS_FILE` para elegir entre perfil estable y perfil rapido
+- `FANET_HOST_WEIGHTS_DIR` y `FANET_CHECKPOINT_NAME` para la ruta del checkpoint
 - `L4T_VERSION`, `L4T_MAJOR` y `L4T_MINOR` si tu JetPack cambia
 
 ## Nota importante

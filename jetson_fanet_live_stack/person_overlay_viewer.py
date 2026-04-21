@@ -77,16 +77,6 @@ class PersonOverlayViewer(Node):
                 markerSize=20,
                 thickness=2,
             )
-            cv2.putText(
-                image,
-                f'P{index} px=({center_x},{center_y}) area={area_pixels}px',
-                (10, 28 + 26 * (index - 1)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.65,
-                color,
-                2,
-                cv2.LINE_AA,
-            )
 
         cv2.imshow(self._window_name, image)
         cv2.waitKey(1)

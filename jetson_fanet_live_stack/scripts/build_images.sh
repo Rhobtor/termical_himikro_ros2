@@ -6,7 +6,21 @@ ZED_DOCKER_DIR="${ROOT_DIR}/../zed_wrapper/zed-ros2-wrapper-humble-v4.1.4/docker
 
 cd "${ROOT_DIR}"
 
+USER_ZED_BUILD=${ZED_BUILD:-}
+USER_HIKMICRO_BUILD=${HIKMICRO_BUILD:-}
+USER_FANET_BUILD=${FANET_BUILD:-}
+
 source "${ROOT_DIR}/scripts/config.sh"
+
+if [[ -n "${USER_ZED_BUILD}" ]]; then
+	ZED_BUILD=${USER_ZED_BUILD}
+fi
+if [[ -n "${USER_HIKMICRO_BUILD}" ]]; then
+	HIKMICRO_BUILD=${USER_HIKMICRO_BUILD}
+fi
+if [[ -n "${USER_FANET_BUILD}" ]]; then
+	FANET_BUILD=${USER_FANET_BUILD}
+fi
 
 echo "[1/3] Preparando fuentes de ZED para Docker"
 if [[ "${ZED_BUILD}" == "1" ]]; then

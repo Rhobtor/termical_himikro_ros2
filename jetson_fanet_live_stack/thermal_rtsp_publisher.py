@@ -5,10 +5,12 @@ import argparse
 import subprocess
 import time
 
+import cv2
+import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import CompressedImage, Image
 
 
 class ThermalRtspPublisher(Node):
@@ -21,6 +23,7 @@ class ThermalRtspPublisher(Node):
             reliability=ReliabilityPolicy.BEST_EFFORT,
         )
         self._publisher = self.create_publisher(Image, args.topic, sensor_qos)
+        self._compressed_publisher = self.create_publisher(CompressedImage, args.compressed_topic, sensor_qos)
         self._frame_size = int(args.width) * int(args.height)
         self._process = None
         self.get_logger().info(f'Publicando termica RTSP en {args.topic} desde {args.url}')
@@ -90,12 +93,38 @@ class ThermalRtspPublisher(Node):
             msg.step = int(self._args.width)
             msg.data = frame
             self._publisher.publish(msg)
+            self._compressed_publisher.publish(
+                self._to_compressed_image_msg(
+                    frame=frame,
+                    width=int(self._args.width),
+                    height=int(self._args.height),
+                    header=msg.header,
+                    jpeg_quality=int(self._args.jpeg_quality),
+                )
+            )
             last_pub = now
 
     def destroy_node(self):
         if self._process is not None and self._process.poll() is None:
             self._process.terminate()
         return super().destroy_node()
+
+    @staticmethod
+    def _to_compressed_image_msg(frame: bytes, width: int, height: int, header, jpeg_quality: int) -> CompressedImage:
+        image = np.frombuffer(frame, dtype=np.uint8).reshape((height, width))
+        success, encoded = cv2.imencode(
+            '.jpg',
+            image,
+            [int(cv2.IMWRITE_JPEG_QUALITY), max(1, min(100, jpeg_quality))],
+        )
+        if not success:
+            raise RuntimeError('No se pudo comprimir la termica raw a JPEG')
+
+        msg = CompressedImage()
+        msg.header = header
+        msg.format = 'jpeg'
+        msg.data = encoded.tobytes()
+        return msg
 
 
 def parse_args() -> argparse.Namespace:
@@ -106,6 +135,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--width', type=int, default=640)
     parser.add_argument('--height', type=int, default=512)
     parser.add_argument('--fps', type=float, default=25.0)
+    parser.add_argument('--compressed-topic', default='/fanet/raw/thermal/compressed')
+    parser.add_argument('--jpeg-quality', type=int, default=60)
     return parser.parse_args()
 
 
