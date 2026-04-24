@@ -6,8 +6,7 @@ source "${ROOT_DIR}/scripts/config.sh"
 IMAGE=${IMAGE:-hikmicro_thermal_ros2:jetson}
 DISPLAY_VALUE=${DISPLAY:-:0}
 XAUTHORITY_VALUE=${XAUTHORITY:-$HOME/.Xauthority}
-OVERLAY_TOPIC=${OVERLAY_TOPIC:-/fanet/segmentation/overlay}
-CENTROID_TOPIC=${CENTROID_TOPIC:-/fanet/person_centroid}
+GUI_TOPIC=${GUI_TOPIC:-${FANET_GUI_RGB_TOPIC}}
 
 docker rm -f fanet_person_overlay >/dev/null 2>&1 || true
 
@@ -35,7 +34,7 @@ fi
 
 docker run "${DOCKER_ARGS[@]}" \
   "${IMAGE}" \
-  bash -lc "source /opt/ros/humble/install/setup.bash && python3 /workspace/deploy/person_overlay_viewer.py --overlay-topic ${OVERLAY_TOPIC} --centroid-topic ${CENTROID_TOPIC}"
+  bash -lc "source /opt/ros/humble/install/setup.bash && python3 /workspace/deploy/image_topic_viewer.py --topic ${GUI_TOPIC} --window-name fanet_person_overlay"
 
-echo "Visor overlay+persona lanzado en contenedor fanet_person_overlay"
+echo "Visor GUI lanzado en contenedor fanet_person_overlay sobre ${GUI_TOPIC}"
 echo "Para cerrarlo: docker rm -f fanet_person_overlay"

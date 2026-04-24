@@ -318,7 +318,10 @@ class TopicInferenceNode(Node):
         inference_end = time.perf_counter()
 
         postprocess_start = time.perf_counter()
-        person_instances = self._extract_person_instances(mask)
+        needs_multiple_people = bool(self.get_parameter('publish_person_centroids').value) or bool(self.get_parameter('publish_person_count').value)
+        needs_drawn_instances = bool(self.get_parameter('publish_overlay').value) and bool(self.get_parameter('draw_person_instances').value)
+        max_instances = None if (needs_multiple_people or needs_drawn_instances) else 1
+        person_instances = self._extract_person_instances(mask, max_instances=max_instances)
         primary_person = person_instances[0] if person_instances else None
 
         color_mask = None
@@ -433,7 +436,7 @@ class TopicInferenceNode(Node):
         self._processed_pairs_at_last_log = self._processed_pairs
         self._last_perf_log = now
 
-    def _extract_person_instances(self, mask: np.ndarray):
+    def _extract_person_instances(self, mask: np.ndarray, max_instances: int | None = None):
         person_class_index = int(self.get_parameter('person_class_index').value)
         min_pixels = max(1, int(self.get_parameter('person_min_pixels').value))
         min_bbox_width = max(1, int(self.get_parameter('person_min_bbox_width').value))
@@ -467,16 +470,16 @@ class TopicInferenceNode(Node):
                 continue
             centroid_x = float(centroids[label][0])
             centroid_y = float(centroids[label][1])
-            component_mask = (labels == label).astype(np.uint8)
             instances.append({
                 'centroid_x': centroid_x,
                 'centroid_y': centroid_y,
                 'area': area,
                 'bbox': (left, top, width, height),
-                'mask': component_mask,
             })
 
         instances.sort(key=lambda item: item['area'], reverse=True)
+        if max_instances is not None:
+            return instances[:max(1, int(max_instances))]
         return instances
 
     @staticmethod

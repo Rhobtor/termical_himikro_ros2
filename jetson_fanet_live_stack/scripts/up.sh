@@ -112,7 +112,7 @@ docker run -d \
 	-e NVIDIA_DRIVER_CAPABILITIES=all \
 	-v "${ROOT_DIR}:/workspace/deploy:ro" \
 	"${FANET_IMAGE}" \
-	bash -lc "source /opt/ros/humble/install/setup.bash && python3 /workspace/deploy/person_position_from_depth.py --centroid-topic ${FANET_PERSON_CENTROID_TOPIC} --centroids-topic ${FANET_PERSON_CENTROIDS_TOPIC} --overlay-topic ${FANET_OVERLAY_TOPIC} --depth-topic ${ZED_DEPTH_TOPIC} --camera-info-topic ${ZED_DEPTH_CAMERA_INFO_TOPIC} --camera-position-topic ${FANET_PERSON_POSITION_CAMERA_TOPIC} --camera-positions-topic ${FANET_PERSON_POSITIONS_CAMERA_TOPIC} --robot-position-topic ${FANET_PERSON_POSITION_ROBOT_TOPIC} --robot-positions-topic ${FANET_PERSON_POSITIONS_ROBOT_TOPIC} --distance-topic ${FANET_PERSON_DISTANCE_TOPIC} --distances-topic ${FANET_PERSON_DISTANCES_TOPIC}"
+	bash -lc "source /opt/ros/humble/install/setup.bash && python3 /workspace/deploy/person_position_from_depth.py --centroid-topic ${FANET_PERSON_CENTROID_TOPIC} --depth-topic ${ZED_DEPTH_TOPIC} --camera-info-topic ${ZED_DEPTH_CAMERA_INFO_TOPIC} --camera-position-topic ${FANET_PERSON_POSITION_CAMERA_TOPIC} --robot-position-topic ${FANET_PERSON_POSITION_ROBOT_TOPIC} --distance-topic ${FANET_PERSON_DISTANCE_TOPIC} --model-width ${FANET_MODEL_WIDTH} --model-height ${FANET_MODEL_HEIGHT}"
 
 docker run -d \
 	--name fanet_gui_topics \
@@ -127,7 +127,7 @@ docker run -d \
 	-e NVIDIA_DRIVER_CAPABILITIES=all \
 	-v "${ROOT_DIR}:/workspace/deploy:ro" \
 	"${FANET_IMAGE}" \
-	bash -lc "source /opt/ros/humble/install/setup.bash && python3 /workspace/deploy/gui_topics_publisher.py --overlay-topic ${FANET_OVERLAY_TOPIC} --rgb-topic ${ZED_RGB_TOPIC} --thermal-topic ${FANET_RAW_THERMAL_TOPIC} --centroids-topic ${FANET_PERSON_CENTROIDS_TOPIC} --robot-positions-topic ${FANET_PERSON_POSITIONS_ROBOT_TOPIC} --distances-topic ${FANET_PERSON_DISTANCES_TOPIC} --rgb-output-topic ${FANET_GUI_RGB_TOPIC} --thermal-output-topic ${FANET_GUI_THERMAL_TOPIC} --rgb-compressed-output-topic ${FANET_GUI_RGB_COMPRESSED_TOPIC} --thermal-compressed-output-topic ${FANET_GUI_THERMAL_COMPRESSED_TOPIC} --jpeg-quality ${FANET_GUI_JPEG_QUALITY}"
+	bash -lc "source /opt/ros/humble/install/setup.bash && python3 /workspace/deploy/gui_topics_publisher.py --rgb-topic ${FANET_RGB_TOPIC} --thermal-topic ${FANET_RAW_THERMAL_TOPIC} --centroid-topic ${FANET_PERSON_CENTROID_TOPIC} --robot-position-topic ${FANET_PERSON_POSITION_ROBOT_TOPIC} --distance-topic ${FANET_PERSON_DISTANCE_TOPIC} --rgb-output-topic ${FANET_GUI_RGB_TOPIC} --thermal-output-topic ${FANET_GUI_THERMAL_TOPIC} --rgb-compressed-output-topic ${FANET_GUI_RGB_COMPRESSED_TOPIC} --thermal-compressed-output-topic ${FANET_GUI_THERMAL_COMPRESSED_TOPIC} --model-width ${FANET_MODEL_WIDTH} --model-height ${FANET_MODEL_HEIGHT} --jpeg-quality ${FANET_GUI_JPEG_QUALITY} --publish-rgb-image ${FANET_GUI_PUBLISH_RGB_IMAGE} --publish-rgb-compressed ${FANET_GUI_PUBLISH_RGB_COMPRESSED} --publish-thermal-image ${FANET_GUI_PUBLISH_THERMAL_IMAGE} --publish-thermal-compressed ${FANET_GUI_PUBLISH_THERMAL_COMPRESSED}"
 
 echo "Stack levantado."
 echo "Usa ./scripts/check_topics.sh para validar los topics."

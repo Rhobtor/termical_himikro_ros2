@@ -6,10 +6,12 @@ __pycache__/
 
 jetson_fanet_live_stack/.env
 jetson_fanet_live_stack/__pycache__/
+jetson_fanet_live_stack/logs/
 
 fanet_rso2/CPGFANet/weights/*.pth
 fanet_rso2/CPGFANet/ros2_outputs/
 fanet_rso2/CPGFANet/**/__pycache__/
+fanet_tensorRT_ros2/artifacts/
 
 build/
 install/

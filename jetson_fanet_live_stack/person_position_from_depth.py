@@ -7,8 +7,7 @@ from typing import Optional
 
 import numpy as np
 import rclpy
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import PoseArray
+from geometry_msgs.msg import Pose, PoseArray
 from geometry_msgs.msg import PointStamped
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
@@ -22,8 +21,6 @@ class PersonPositionFromDepth(Node):
         self._args = args
         self._depth_msg: Optional[Image] = None
         self._camera_info: Optional[CameraInfo] = None
-        self._overlay_size: Optional[tuple[int, int]] = None
-        self._last_centroids: list[tuple[float, float, float]] = []
 
         sensor_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
@@ -40,7 +37,6 @@ class PersonPositionFromDepth(Node):
 
         self.create_subscription(Image, args.depth_topic, self._on_depth, sensor_qos)
         self.create_subscription(CameraInfo, args.camera_info_topic, self._on_camera_info, sensor_qos)
-        self.create_subscription(Image, args.overlay_topic, self._on_overlay, sensor_qos)
         self.create_subscription(PointStamped, args.centroid_topic, self._on_centroid, 10)
         self.create_subscription(PoseArray, args.centroids_topic, self._on_centroids, 10)
 
@@ -54,26 +50,15 @@ class PersonPositionFromDepth(Node):
     def _on_camera_info(self, msg: CameraInfo) -> None:
         self._camera_info = msg
 
-    def _on_overlay(self, msg: Image) -> None:
-        self._overlay_size = (int(msg.width), int(msg.height))
-
-    def _on_centroids(self, msg: PoseArray) -> None:
-        self._last_centroids = [
-            (float(pose.position.x), float(pose.position.y), float(pose.position.z))
-            for pose in msg.poses
-        ]
-
     def _on_centroid(self, msg: PointStamped) -> None:
-        if self._depth_msg is None or self._camera_info is None or self._overlay_size is None:
+        if self._depth_msg is None or self._camera_info is None:
             return
 
-        candidates = self._last_centroids or [(float(msg.point.x), float(msg.point.y), float(msg.point.z))]
-        projections = self._project_candidates(candidates)
-        if not projections:
+        projected = self._project_image_centroid(float(msg.point.x), float(msg.point.y))
+        if projected is None:
             return
 
-        first_projection = projections[0]
-        x_cam, y_cam, z_cam = first_projection['camera_point']
+        x_cam, y_cam, z_cam = projected
 
         camera_point = PointStamped()
         camera_point.header.stamp = msg.header.stamp
@@ -95,8 +80,12 @@ class PersonPositionFromDepth(Node):
         distance.data = float(math.sqrt(x_cam * x_cam + y_cam * y_cam + z_cam * z_cam))
         self._distance_pub.publish(distance)
 
+    def _on_centroids(self, msg: PoseArray) -> None:
+        if self._depth_msg is None or self._camera_info is None:
+            return
+
         camera_array = PoseArray()
-        camera_array.header.stamp = msg.header.stamp
+        camera_array.header = msg.header
         camera_array.header.frame_id = self._depth_msg.header.frame_id or msg.header.frame_id
 
         robot_array = PoseArray()
@@ -104,71 +93,51 @@ class PersonPositionFromDepth(Node):
         robot_array.header.frame_id = self._args.robot_frame_id
 
         distance_array = Float32MultiArray()
-        for candidate in candidates:
-            pose = Pose()
-            pose.position.x = math.nan
-            pose.position.y = math.nan
-            pose.position.z = math.nan
-            camera_array.poses.append(pose)
 
-            pose = Pose()
-            pose.position.x = math.nan
-            pose.position.y = math.nan
-            pose.position.z = math.nan
-            robot_array.poses.append(pose)
-            distance_array.data.append(float('nan'))
+        for pose_in in msg.poses:
+            projected = self._project_image_centroid(float(pose_in.position.x), float(pose_in.position.y))
 
-        for projection in projections:
-            index = int(projection['index'])
-            x_cam, y_cam, z_cam = projection['camera_point']
-            x_robot, y_robot, z_robot = projection['robot_point']
-            distance_m = projection['distance_m']
+            camera_pose = Pose()
+            camera_pose.orientation.w = 1.0
+            robot_pose = Pose()
+            robot_pose.orientation.w = 1.0
 
-            camera_array.poses[index].position.x = float(x_cam)
-            camera_array.poses[index].position.y = float(y_cam)
-            camera_array.poses[index].position.z = float(z_cam)
-            robot_array.poses[index].position.x = float(x_robot)
-            robot_array.poses[index].position.y = float(y_robot)
-            robot_array.poses[index].position.z = float(z_robot)
-            distance_array.data[index] = float(distance_m)
+            if projected is None:
+                camera_pose.position.x = math.nan
+                camera_pose.position.y = math.nan
+                camera_pose.position.z = math.nan
+                robot_pose.position.x = math.nan
+                robot_pose.position.y = math.nan
+                robot_pose.position.z = math.nan
+                distance_array.data.append(float('nan'))
+            else:
+                x_cam, y_cam, z_cam = projected
+                x_robot = float(z_cam)
+                y_robot = float(-x_cam)
+                z_robot = float(-y_cam)
+                camera_pose.position.x = float(x_cam)
+                camera_pose.position.y = float(y_cam)
+                camera_pose.position.z = float(z_cam)
+                robot_pose.position.x = x_robot
+                robot_pose.position.y = y_robot
+                robot_pose.position.z = z_robot
+                distance_array.data.append(float(math.sqrt(x_cam * x_cam + y_cam * y_cam + z_cam * z_cam)))
+
+            camera_array.poses.append(camera_pose)
+            robot_array.poses.append(robot_pose)
 
         self._camera_array_pub.publish(camera_array)
         self._robot_array_pub.publish(robot_array)
         self._distance_array_pub.publish(distance_array)
 
-    def _project_candidates(self, candidates: list[tuple[float, float, float]]) -> list[dict[str, object]]:
-        projections: list[dict[str, object]] = []
-
-        for index, candidate in enumerate(candidates):
-            image_x, image_y, _area = candidate
-            projected = self._project_image_centroid(float(image_x), float(image_y))
-            if projected is None:
-                continue
-
-            x_cam, y_cam, z_cam = projected
-            x_robot = float(z_cam)
-            y_robot = float(-x_cam)
-            z_robot = float(-y_cam)
-            distance_m = math.sqrt(x_cam * x_cam + y_cam * y_cam + z_cam * z_cam)
-            projections.append(
-                {
-                    'index': index,
-                    'camera_point': (float(x_cam), float(y_cam), float(z_cam)),
-                    'robot_point': (x_robot, y_robot, z_robot),
-                    'distance_m': float(distance_m),
-                }
-            )
-
-        return projections
-
     def _project_image_centroid(self, centroid_x: float, centroid_y: float) -> Optional[tuple[float, float, float]]:
         depth = self._depth_msg
         camera_info = self._camera_info
-        model_size = self._overlay_size
-        if depth is None or camera_info is None or model_size is None:
+        if depth is None or camera_info is None:
             return None
 
-        model_width, model_height = model_size
+        model_width = max(1, int(self._args.model_width))
+        model_height = max(1, int(self._args.model_height))
         if model_width <= 0 or model_height <= 0:
             return None
 
@@ -225,7 +194,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Convierte centroides 2D en posicion 3D usando profundidad ZED.')
     parser.add_argument('--centroid-topic', default='/fanet/person_centroid')
     parser.add_argument('--centroids-topic', default='/fanet/person_centroids')
-    parser.add_argument('--overlay-topic', default='/fanet/segmentation/overlay')
     parser.add_argument('--depth-topic', default='/zed/zed_node/depth/depth_registered')
     parser.add_argument('--camera-info-topic', default='/zed/zed_node/depth/camera_info')
     parser.add_argument('--camera-position-topic', default='/fanet/person_position_camera')
@@ -235,6 +203,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--distance-topic', default='/fanet/person_distance')
     parser.add_argument('--distances-topic', default='/fanet/person_distances')
     parser.add_argument('--robot-frame-id', default='robot_same_origin_frame')
+    parser.add_argument('--model-width', type=int, default=448)
+    parser.add_argument('--model-height', type=int, default=352)
     parser.add_argument('--search-radius', type=int, default=3)
     parser.add_argument('--max-depth-m', type=float, default=20.0)
     return parser.parse_args()

@@ -1,0 +1,21 @@
+cpgfanet_trt_topic_inference:
+  ros__parameters:
+    engine_path: /workspace/fanet_tensorRT_ros2/artifacts/fanet_448x352_fp16.engine
+    input_width: 448
+    input_height: 352
+    rgb_scale: 255.0
+    thermal_scale: 255.0
+    rgb_topic: /fanet/input/rgb
+    thermal_topic: /fanet/input/thermal
+    person_centroid_topic: /fanet/person_centroid
+    person_centroids_topic: /fanet/person_centroids
+    person_count_topic: /fanet/person_count
+    publish_person_centroid: true
+    publish_person_centroids: true
+    publish_person_count: true
+    person_class_index: 2
+    person_min_pixels: 72
+    person_min_bbox_width: 8
+    person_min_bbox_height: 16
+    person_morph_open_kernel: 1
+    person_morph_close_kernel: 3
