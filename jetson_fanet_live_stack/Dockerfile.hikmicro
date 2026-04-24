@@ -2,15 +2,24 @@ ARG BASE_IMAGE=cpgfanet_ros2_jetson:humble
 FROM ${BASE_IMAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV HIKMICRO_WS=/workspace/hikmicro_ws
 
 SHELL ["/bin/bash", "-c"]
 
 RUN rm -f /etc/apt/sources.list.d/ros2.list /etc/apt/sources.list.d/ros-latest.list || true && \
     apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg && \
+    ffmpeg \
+    python3-colcon-common-extensions && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace/deploy
-COPY jetson_fanet_live_stack/thermal_rtsp_publisher.py /workspace/deploy/thermal_rtsp_publisher.py
+WORKDIR ${HIKMICRO_WS}/src/hikmicro_thermal_camera
+COPY package.xml CMakeLists.txt ${HIKMICRO_WS}/src/hikmicro_thermal_camera/
+COPY src ${HIKMICRO_WS}/src/hikmicro_thermal_camera/src
+COPY launch ${HIKMICRO_WS}/src/hikmicro_thermal_camera/launch
+COPY config ${HIKMICRO_WS}/src/hikmicro_thermal_camera/config
+
+RUN source /opt/ros/humble/install/setup.bash && \
+    cd ${HIKMICRO_WS} && \
+    colcon build --symlink-install
 
 CMD ["bash"]

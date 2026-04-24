@@ -21,6 +21,7 @@ Este despliegue deja tres entradas ROS 2 conectadas por Docker:
 - `zed_wrapper_2` publica RGB desde ZED.
 - `fanet_rgb_bridge` adapta el topic RGB de ZED a `rgb8` en `/fanet/input/rgb`.
 - `hikmicro_thermal` publica la térmica en `/fanet/raw/thermal` usando `ffmpeg` dentro del contenedor.
+	Usa por defecto el nodo ROS 2 `termical_camera_ffmpeg_pipe` del paquete Hikmicro para reducir latencia.
 - `fanet_pair_sync` republica RGB y térmica con un mismo `timestamp` para que FANet procese pares reales.
 - `danet_ros2` consume ambos topics y ejecuta la inferencia de FANet.
 
@@ -99,7 +100,9 @@ Los scripts usan `docker build` y `docker run` directos, así que no dependen de
 ### Configuracion
 
 - `scripts/config.sh`: configuracion fija de la stack. Aqui estan RTSP, topics, imagenes y rutas.
-- `fanet_fast.params.yaml`: perfil rapido del modelo, recomendado para tiempo real.
+	Tambien permite elegir el ejecutable Hikmicro usado por la stack.
+- `fanet_balanced.params.yaml`: perfil equilibrado por defecto, con mejor deteccion de personas sin ir al coste maximo.
+- `fanet_fast.params.yaml`: perfil rapido del modelo, prioriza latencia sobre recall.
 - `fanet_live.params.yaml`: perfil mas pesado, mas cerca del flujo original.
 
 ### Pesos del modelo
@@ -114,6 +117,7 @@ Los scripts usan `docker build` y `docker run` directos, así que no dependen de
 - `rgb_topic_adapter.py`: adapta el topic RGB de ZED a `rgb8`.
 - `thermal_rtsp_publisher.py`: publica la imagen termica desde RTSP.
 - `thermal_rtsp_publisher.py`: publica la termica en crudo y en JPEG comprimido.
+	Sigue disponible como referencia, pero el flujo principal usa el nodo Hikmicro nativo.
 - `pair_sync_bridge.py`: resincroniza RGB y termica para que FANet procese pares validos.
 - `person_position_from_depth.py`: convierte cada deteccion 2D de persona a posicion 3D y distancia usando ZED.
 - `gui_topics_publisher.py`: publica RGB y termica anotados para consumirlos desde una GUI remota.
@@ -182,6 +186,7 @@ Edita `scripts/config.sh` si necesitas cambiar:
 - `ZED_CAMERA_MODEL`
 - `ZED_RGB_TOPIC`
 - `HIKMICRO_RTSP_URL`
+- `HIKMICRO_NODE_EXECUTABLE` para elegir `termical_camera` o `termical_camera_ffmpeg_pipe`
 - `ROS_DOMAIN_ID`
 - `FANET_PARAMS_FILE` para elegir entre perfil estable y perfil rapido
 - `FANET_HOST_WEIGHTS_DIR` y `FANET_CHECKPOINT_NAME` para la ruta del checkpoint

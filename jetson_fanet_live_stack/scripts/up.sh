@@ -50,7 +50,7 @@ docker run -d \
 	-e NVIDIA_DRIVER_CAPABILITIES=all \
 	-v "${ROOT_DIR}:/workspace/deploy:ro" \
 	"${HIKMICRO_IMAGE}" \
-	bash -lc "source /opt/ros/humble/install/setup.bash && python3 /workspace/deploy/thermal_rtsp_publisher.py --url ${HIKMICRO_RTSP_URL} --topic ${FANET_RAW_THERMAL_TOPIC} --compressed-topic ${FANET_RAW_THERMAL_COMPRESSED_TOPIC} --transport ${HIKMICRO_TRANSPORT} --width ${HIKMICRO_WIDTH} --height ${HIKMICRO_HEIGHT} --fps ${HIKMICRO_FPS} --jpeg-quality ${HIKMICRO_JPEG_QUALITY}"
+	bash -lc "source /opt/ros/humble/install/setup.bash && source /workspace/hikmicro_ws/install/setup.bash && ros2 run hikmicro_thermal_camera ${HIKMICRO_NODE_EXECUTABLE} --ros-args -p url:=${HIKMICRO_RTSP_URL} -p topic_name:=${FANET_RAW_THERMAL_TOPIC} -p transport:=${HIKMICRO_TRANSPORT} -p width:=${HIKMICRO_WIDTH} -p height:=${HIKMICRO_HEIGHT} -p fps:=${HIKMICRO_FPS} -p reconnect_delay_ms:=${HIKMICRO_RECONNECT_DELAY_MS} -p ffmpeg_log_level:=${HIKMICRO_FFMPEG_LOG_LEVEL} -p scale_output:=${HIKMICRO_SCALE_OUTPUT}"
 
 docker run -d \
 	--name fanet_rgb_bridge \
@@ -80,7 +80,7 @@ docker run -d \
 	-e NVIDIA_DRIVER_CAPABILITIES=all \
 	-v "${ROOT_DIR}:/workspace/deploy:ro" \
 	"${FANET_IMAGE}" \
-	bash -lc "source /opt/ros/humble/install/setup.bash && python3 /workspace/deploy/pair_sync_bridge.py --rgb-in ${FANET_RAW_RGB_TOPIC} --thermal-in ${FANET_RAW_THERMAL_TOPIC} --rgb-out ${FANET_RGB_TOPIC} --thermal-out ${FANET_THERMAL_TOPIC} --rate ${FANET_SYNC_RATE}"
+	bash -lc "source /opt/ros/humble/install/setup.bash && python3 /workspace/deploy/pair_sync_bridge.py --rgb-in ${FANET_RAW_RGB_TOPIC} --thermal-in ${FANET_RAW_THERMAL_TOPIC} --rgb-out ${FANET_RGB_TOPIC} --thermal-out ${FANET_THERMAL_TOPIC} --rate ${FANET_SYNC_RATE} --max-age-s ${FANET_SYNC_MAX_AGE_S} --max-delta-s ${FANET_SYNC_MAX_DELTA_S}"
 
 docker run -d \
 	--name danet_ros2 \

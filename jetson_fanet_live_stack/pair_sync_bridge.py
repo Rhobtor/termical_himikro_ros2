@@ -33,7 +33,7 @@ class PairSyncBridge(Node):
         self.create_subscription(Image, args.thermal_in, self._on_thermal, sensor_qos)
         self.create_timer(1.0 / max(1e-3, args.rate), self._publish_pair)
         self.get_logger().info(
-            f'Sincronizando {args.rgb_in} + {args.thermal_in} -> {args.rgb_out} + {args.thermal_out} @ {args.rate:.1f} Hz'
+            f'Sincronizando {args.rgb_in} + {args.thermal_in} -> {args.rgb_out} + {args.thermal_out} @ {args.rate:.1f} Hz (max_age={args.max_age_s:.3f}s, max_delta={args.max_delta_s:.3f}s)'
         )
 
     def _on_rgb(self, msg: Image) -> None:
@@ -49,7 +49,13 @@ class PairSyncBridge(Node):
             return
 
         now = time.monotonic()
-        if (now - self._latest_rgb_time) > 0.5 or (now - self._latest_thermal_time) > 0.5:
+        rgb_age = now - self._latest_rgb_time
+        thermal_age = now - self._latest_thermal_time
+        if rgb_age > self._args.max_age_s or thermal_age > self._args.max_age_s:
+            return
+
+        pair_delta = abs(self._latest_rgb_time - self._latest_thermal_time)
+        if pair_delta > self._args.max_delta_s:
             return
 
         stamp = self.get_clock().now().to_msg()
@@ -72,6 +78,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--rgb-out', required=True)
     parser.add_argument('--thermal-out', required=True)
     parser.add_argument('--rate', type=float, default=15.0)
+    parser.add_argument('--max-age-s', type=float, default=0.5)
+    parser.add_argument('--max-delta-s', type=float, default=0.5)
     return parser.parse_args()
 
 

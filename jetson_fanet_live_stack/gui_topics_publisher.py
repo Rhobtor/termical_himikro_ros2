@@ -32,8 +32,8 @@ class GuiTopicsPublisher(Node):
 
         self._rgb_pub = self.create_publisher(Image, args.rgb_output_topic, sensor_qos)
         self._thermal_pub = self.create_publisher(Image, args.thermal_output_topic, sensor_qos)
-    self._rgb_compressed_pub = self.create_publisher(CompressedImage, args.rgb_compressed_output_topic, sensor_qos)
-    self._thermal_compressed_pub = self.create_publisher(CompressedImage, args.thermal_compressed_output_topic, sensor_qos)
+        self._rgb_compressed_pub = self.create_publisher(CompressedImage, args.rgb_compressed_output_topic, sensor_qos)
+        self._thermal_compressed_pub = self.create_publisher(CompressedImage, args.thermal_compressed_output_topic, sensor_qos)
 
         self.create_subscription(Image, args.overlay_topic, self._on_overlay, sensor_qos)
         self.create_subscription(Image, args.rgb_topic, self._on_rgb, sensor_qos)
