@@ -1,0 +1,14 @@
+/cpgfanet_bag_image_extractor:
+  ros__parameters:
+    bag_path: ''
+    rgb_topic: '/fanet/raw/rgb'
+    thermal_topic: '/fanet/raw/thermal'
+    output_dir: '/tmp/cpgfanet_bag_extract'
+    pair_tolerance_ms: 50.0
+    sample_stride: 1
+    max_pairs: 0
+    image_format: 'png'
+    save_rgb: true
+    save_thermal_raw: true
+    save_thermal_color: true
+    log_every: 25

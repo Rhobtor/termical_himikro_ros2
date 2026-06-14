@@ -5,6 +5,8 @@ from collections import deque
 from pathlib import Path
 from typing import Deque, List, Optional, Tuple
 
+import cv2
+import numpy as np
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -31,7 +33,7 @@ class OfflineInferenceNode(Node):
 
         self.declare_parameter('repo_root', str(default_repo_root()))
         self.declare_parameter('checkpoint_path', '')
-        self.declare_parameter('model_module', 'model.FEANet')
+        self.declare_parameter('model_module', 'model.CrissCrossAttention_dual_2_sinINF')
         self.declare_parameter('model_class', 'FEANet')
         self.declare_parameter('rgb_image_path', '')
         self.declare_parameter('thermal_image_path', '')
@@ -41,7 +43,7 @@ class OfflineInferenceNode(Node):
         self.declare_parameter('device', 'cuda')
         self.declare_parameter('input_width', 640)
         self.declare_parameter('input_height', 480)
-        self.declare_parameter('num_classes', 9)
+        self.declare_parameter('num_classes', 12)
         self.declare_parameter('rgb_scale', 255.0)
         self.declare_parameter('thermal_scale', 255.0)
         self.declare_parameter('overlay_alpha', 0.45)
@@ -52,7 +54,21 @@ class OfflineInferenceNode(Node):
         self.declare_parameter('save_outputs', True)
         self.declare_parameter('display_results', False)
         self.declare_parameter('display_wait_ms', 1)
-        self.declare_parameter('display_window_name', 'CPGFANet overlay')
+        self.declare_parameter('step_through_images', False)
+        self.declare_parameter('display_dashboard', True)
+        self.declare_parameter('display_dashboard_window_name', 'CPGFANet offline dashboard')
+        self.declare_parameter('display_separate_windows', False)
+        self.declare_parameter('display_rgb_input_window_name', 'CPGFANet input RGB')
+        self.declare_parameter('display_thermal_input_window_name', 'CPGFANet input thermal')
+        self.declare_parameter('display_overlay_window_name', 'CPGFANet overlay')
+        self.declare_parameter('display_mask_window_name', 'CPGFANet segmentation')
+        self.declare_parameter('draw_person_centroids', True)
+        self.declare_parameter('person_class_index', 2)
+        self.declare_parameter('person_min_pixels', 25)
+        self.declare_parameter('person_min_bbox_width', 8)
+        self.declare_parameter('person_min_bbox_height', 16)
+        self.declare_parameter('person_morph_open_kernel', 1)
+        self.declare_parameter('person_morph_close_kernel', 3)
         self.declare_parameter('enable_perf_logging', True)
         self.declare_parameter('perf_log_period_s', 5.0)
         self.declare_parameter('perf_window', 50)
@@ -84,8 +100,7 @@ class OfflineInferenceNode(Node):
         self._sample_cache = []
         self._job_index = 0
         self._display_enabled = False
-        self._display_window_name = 'CPGFANet overlay'
-        self._cv2 = None
+        self._display_initialized = False
         self._run_count = 0
         self._last_perf_log = time.perf_counter()
         self._enable_amp = False
@@ -197,7 +212,6 @@ class OfflineInferenceNode(Node):
         self._device = torch.device(device_name)
         self._overlay_alpha = float(self.get_parameter('overlay_alpha').value)
         self._display_enabled = bool(self.get_parameter('display_results').value)
-        self._display_window_name = str(self.get_parameter('display_window_name').value)
         self._enable_amp = bool(self.get_parameter('enable_amp').value) and self._device.type == 'cuda'
 
         self._model = load_model(
@@ -228,9 +242,14 @@ class OfflineInferenceNode(Node):
         cached_samples = []
         for rgb_path, thermal_path, _ in self._image_jobs:
             if preprocess_on_load:
-                input_tensor, rgb_resized = load_and_preprocess(
+                rgb_image, thermal_image = load_image_pair(
                     rgb_path=rgb_path,
                     thermal_path=thermal_path,
+                    image_size=self._image_size,
+                )
+                input_tensor, rgb_resized, thermal_resized = preprocess_pair(
+                    rgb_image=rgb_image,
+                    thermal_image=thermal_image,
                     image_size=self._image_size,
                     rgb_scale=float(self.get_parameter('rgb_scale').value),
                     thermal_scale=float(self.get_parameter('thermal_scale').value),
@@ -239,6 +258,7 @@ class OfflineInferenceNode(Node):
                     {
                         'input_tensor': input_tensor,
                         'rgb_resized': rgb_resized,
+                        'thermal_resized': thermal_resized,
                     }
                 )
                 continue
@@ -309,30 +329,213 @@ class OfflineInferenceNode(Node):
         if len(self._image_jobs) > 1:
             self._job_index += 1
 
-    def _display_overlay(self, overlay, job_name: str) -> None:
+    def _display_images(
+        self,
+        rgb_input,
+        thermal_input,
+        overlay,
+        mask_display,
+        progress_text: str,
+    ) -> None:
         if not self._display_enabled:
             return
-        if self._cv2 is None:
-            try:
-                import cv2
-            except ImportError as exc:
-                raise RuntimeError(
-                    'display_results=true requiere OpenCV. Instala python3-opencv dentro del entorno/contenedor.'
-                ) from exc
-            self._cv2 = cv2
 
-        bgr_overlay = self._cv2.cvtColor(overlay, self._cv2.COLOR_RGB2BGR)
-        self._cv2.imshow(self._display_window_name, bgr_overlay)
-        if hasattr(self._cv2, 'setWindowTitle'):
-            self._cv2.setWindowTitle(self._display_window_name, f'{self._display_window_name} | {job_name}')
-        wait_ms = max(0, int(self.get_parameter('display_wait_ms').value))
-        key = self._cv2.waitKey(wait_ms) & 0xFF
+        if not self._display_initialized:
+            dashboard_window = str(self.get_parameter('display_dashboard_window_name').value)
+            rgb_window = str(self.get_parameter('display_rgb_input_window_name').value)
+            thermal_window = str(self.get_parameter('display_thermal_input_window_name').value)
+            overlay_window = str(self.get_parameter('display_overlay_window_name').value)
+            mask_window = str(self.get_parameter('display_mask_window_name').value)
+
+            if bool(self.get_parameter('display_dashboard').value):
+                cv2.namedWindow(dashboard_window, cv2.WINDOW_NORMAL)
+                cv2.resizeWindow(dashboard_window, 1400, 900)
+                cv2.moveWindow(dashboard_window, 20, 20)
+
+            if bool(self.get_parameter('display_separate_windows').value):
+                cv2.namedWindow(rgb_window, cv2.WINDOW_NORMAL)
+                cv2.namedWindow(thermal_window, cv2.WINDOW_NORMAL)
+                cv2.namedWindow(overlay_window, cv2.WINDOW_NORMAL)
+                cv2.namedWindow(mask_window, cv2.WINDOW_NORMAL)
+
+                cv2.resizeWindow(rgb_window, 640, 360)
+                cv2.resizeWindow(thermal_window, 640, 360)
+                cv2.resizeWindow(overlay_window, 640, 360)
+                cv2.resizeWindow(mask_window, 640, 360)
+
+                cv2.moveWindow(rgb_window, 20, 20)
+                cv2.moveWindow(thermal_window, 700, 20)
+                cv2.moveWindow(overlay_window, 20, 430)
+                cv2.moveWindow(mask_window, 700, 430)
+
+            self._display_initialized = True
+
+        thermal_display = cv2.applyColorMap(thermal_input, cv2.COLORMAP_INFERNO)
+        rgb_bgr = cv2.cvtColor(rgb_input, cv2.COLOR_RGB2BGR)
+        overlay_bgr = cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR)
+        mask_bgr = cv2.cvtColor(mask_display, cv2.COLOR_RGB2BGR)
+
+        if bool(self.get_parameter('display_dashboard').value):
+            dashboard = self._build_dashboard(
+                rgb_bgr=rgb_bgr,
+                thermal_bgr=thermal_display,
+                overlay_bgr=overlay_bgr,
+                mask_bgr=mask_bgr,
+                progress_text=progress_text,
+            )
+            cv2.imshow(str(self.get_parameter('display_dashboard_window_name').value), dashboard)
+
+        if bool(self.get_parameter('display_separate_windows').value):
+            cv2.imshow(str(self.get_parameter('display_rgb_input_window_name').value), rgb_bgr)
+            cv2.imshow(str(self.get_parameter('display_thermal_input_window_name').value), thermal_display)
+            cv2.imshow(str(self.get_parameter('display_overlay_window_name').value), overlay_bgr)
+            cv2.imshow(str(self.get_parameter('display_mask_window_name').value), mask_bgr)
+
+        key = self._wait_for_display_input()
         if key in (27, ord('q')):
             raise KeyboardInterrupt('Visualización detenida por el usuario.')
 
+    def _wait_for_display_input(self) -> int:
+        if bool(self.get_parameter('step_through_images').value):
+            while True:
+                key = cv2.waitKey(50) & 0xFF
+                if key in (27, ord('q'), ord(' '), ord('n'), 13):
+                    return key
+        return cv2.waitKey(max(1, int(self.get_parameter('display_wait_ms').value))) & 0xFF
+
+    def _build_dashboard(
+        self,
+        rgb_bgr,
+        thermal_bgr,
+        overlay_bgr,
+        mask_bgr,
+        progress_text: str,
+    ):
+        top_left = self._annotate_panel(rgb_bgr, 'RGB usada por el modelo (raw)')
+        top_right = self._annotate_panel(thermal_bgr, 'Termica usada por el modelo (gris raw) | preview color')
+        bottom_left = self._annotate_panel(overlay_bgr, 'Overlay')
+        bottom_right = self._annotate_panel(mask_bgr, 'Segmentacion')
+        top_row = cv2.hconcat([top_left, top_right])
+        bottom_row = cv2.hconcat([bottom_left, bottom_right])
+        dashboard = cv2.vconcat([top_row, bottom_row])
+        cv2.rectangle(dashboard, (0, dashboard.shape[0] - 36), (dashboard.shape[1], dashboard.shape[0]), (24, 24, 24), thickness=-1)
+        cv2.putText(dashboard, progress_text, (12, dashboard.shape[0] - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+        return dashboard
+
+    @staticmethod
+    def _annotate_panel(image, title: str):
+        panel = image.copy()
+        cv2.rectangle(panel, (0, 0), (panel.shape[1], 30), (32, 32, 32), thickness=-1)
+        cv2.putText(panel, title, (12, 21), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
+        return panel
+
     def _cleanup_display(self) -> None:
-        if self._cv2 is not None:
-            self._cv2.destroyAllWindows()
+        if self._display_initialized:
+            cv2.destroyAllWindows()
+            self._display_initialized = False
+
+    def _predict_mask_and_person_prob(self, input_tensor):
+        person_class_index = int(self.get_parameter('person_class_index').value)
+        with torch.inference_mode():
+            input_tensor = input_tensor.to(device=self._device, dtype=torch.float32, non_blocking=True)
+            if self._enable_amp and self._device.type == 'cuda':
+                with torch.autocast(device_type='cuda', dtype=torch.float16):
+                    logits = self._model(input_tensor)
+            else:
+                logits = self._model(input_tensor)
+
+            probabilities = torch.softmax(logits, dim=1)
+            prediction = torch.argmax(logits, dim=1)
+            person_prob = probabilities[:, person_class_index]
+
+        return (
+            prediction.squeeze(0).cpu().numpy().astype(np.uint8),
+            person_prob.squeeze(0).cpu().numpy().astype(np.float32),
+        )
+
+    def _extract_person_instances(self, mask: np.ndarray, person_prob: np.ndarray | None = None):
+        person_class_index = int(self.get_parameter('person_class_index').value)
+        min_pixels = max(1, int(self.get_parameter('person_min_pixels').value))
+        min_bbox_width = max(1, int(self.get_parameter('person_min_bbox_width').value))
+        min_bbox_height = max(1, int(self.get_parameter('person_min_bbox_height').value))
+        binary = (mask == person_class_index).astype(np.uint8)
+        if not np.any(binary):
+            return []
+
+        open_kernel_size = max(0, int(self.get_parameter('person_morph_open_kernel').value))
+        close_kernel_size = max(0, int(self.get_parameter('person_morph_close_kernel').value))
+        if open_kernel_size > 1:
+            open_kernel = np.ones((open_kernel_size, open_kernel_size), dtype=np.uint8)
+            binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, open_kernel)
+        if close_kernel_size > 1:
+            close_kernel = np.ones((close_kernel_size, close_kernel_size), dtype=np.uint8)
+            binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, close_kernel)
+        if not np.any(binary):
+            return []
+
+        component_count, _labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
+        instances = []
+        for label in range(1, component_count):
+            area = int(stats[label, cv2.CC_STAT_AREA])
+            if area < min_pixels:
+                continue
+            left = int(stats[label, cv2.CC_STAT_LEFT])
+            top = int(stats[label, cv2.CC_STAT_TOP])
+            width = int(stats[label, cv2.CC_STAT_WIDTH])
+            height = int(stats[label, cv2.CC_STAT_HEIGHT])
+            if width < min_bbox_width or height < min_bbox_height:
+                continue
+            confidence = None
+            if person_prob is not None:
+                label_mask = _labels == label
+                if np.any(label_mask):
+                    confidence = float(np.mean(person_prob[label_mask]))
+            instances.append(
+                {
+                    'centroid_x': float(centroids[label][0]),
+                    'centroid_y': float(centroids[label][1]),
+                    'area': area,
+                    'bbox': (left, top, width, height),
+                    'confidence': confidence,
+                }
+            )
+        instances.sort(key=lambda item: int(item['area']), reverse=True)
+        return instances
+
+    def _draw_person_instances(self, image: np.ndarray, person_instances) -> np.ndarray:
+        if not bool(self.get_parameter('draw_person_centroids').value) or not person_instances:
+            return image
+
+        output = image.copy()
+        palette = [
+            (0, 255, 0),
+            (0, 200, 255),
+            (255, 180, 0),
+            (255, 80, 80),
+            (180, 80, 255),
+            (80, 255, 180),
+        ]
+        for index, instance in enumerate(person_instances, start=1):
+            color = palette[(index - 1) % len(palette)]
+            center = (int(round(instance['centroid_x'])), int(round(instance['centroid_y'])))
+            cv2.drawMarker(output, center, color, markerType=cv2.MARKER_CROSS, markerSize=20, thickness=2)
+            left, top, width, height = instance['bbox']
+            cv2.rectangle(output, (left, top), (left + width, top + height), color, 2)
+            confidence = instance.get('confidence')
+            if confidence is not None:
+                confidence_text = f'{confidence * 100.0:.1f}%'
+                text_origin_y = top - 8 if top > 18 else top + 20
+                cv2.putText(
+                    output,
+                    confidence_text,
+                    (left, text_origin_y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.55,
+                    color,
+                    2,
+                    cv2.LINE_AA,
+                )
+        return output
 
     def _run_once(self) -> None:
         if self._finished:
@@ -359,8 +562,9 @@ class OfflineInferenceNode(Node):
             elif 'input_tensor' in cached_sample:
                 input_tensor = cached_sample['input_tensor']
                 rgb_resized = cached_sample['rgb_resized']
+                thermal_resized = cached_sample['thermal_resized']
             else:
-                input_tensor, rgb_resized, _ = preprocess_pair(
+                input_tensor, rgb_resized, thermal_resized = preprocess_pair(
                     rgb_image=cached_sample['rgb_image'],
                     thermal_image=cached_sample['thermal_image'],
                     image_size=self._image_size,
@@ -371,28 +575,43 @@ class OfflineInferenceNode(Node):
 
             self._sync_device()
             inference_start = time.perf_counter()
-            mask = predict_mask(
-                model=self._model,
-                input_tensor=input_tensor,
-                device=self._device,
-                use_amp=self._enable_amp,
-            )
+            mask, person_prob = self._predict_mask_and_person_prob(input_tensor)
+            if mask.shape != rgb_resized.shape[:2]:
+                mask = cv2.resize(
+                    mask.astype('uint8'),
+                    (int(rgb_resized.shape[1]), int(rgb_resized.shape[0])),
+                    interpolation=cv2.INTER_NEAREST,
+                )
+                person_prob = cv2.resize(
+                    person_prob.astype(np.float32),
+                    (int(rgb_resized.shape[1]), int(rgb_resized.shape[0])),
+                    interpolation=cv2.INTER_LINEAR,
+                )
             self._sync_device()
             inference_end = time.perf_counter()
 
             postprocess_start = time.perf_counter()
             color_mask = colorize_mask(mask)
-            overlay = blend_overlay(
+            overlay_base = blend_overlay(
                 rgb_image=rgb_resized,
                 color_mask=color_mask,
                 alpha=self._overlay_alpha,
             )
+            person_instances = self._extract_person_instances(mask, person_prob)
+            overlay = self._draw_person_instances(overlay_base, person_instances)
+            mask_display = self._draw_person_instances(color_mask, person_instances)
 
             if bool(self.get_parameter('save_outputs').value):
                 save_dir = self._output_dir if len(self._image_jobs) == 1 else self._output_dir / job_name
-                save_outputs(output_dir=save_dir, mask=mask, color_mask=color_mask, overlay=overlay)
-            self._publish_images(mask=mask, color_mask=color_mask, overlay=overlay)
-            self._display_overlay(overlay=overlay, job_name=job_name)
+                save_outputs(output_dir=save_dir, mask=mask, color_mask=mask_display, overlay=overlay)
+            self._publish_images(mask=mask, color_mask=mask_display, overlay=overlay)
+            self._display_images(
+                rgb_input=rgb_resized,
+                thermal_input=thermal_resized,
+                overlay=overlay,
+                mask_display=mask_display,
+                progress_text=f'par {self._job_index + 1}/{len(self._image_jobs)} | {job_name}',
+            )
             postprocess_end = time.perf_counter()
 
             load_ms = (load_end - load_start) * 1000.0

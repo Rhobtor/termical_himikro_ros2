@@ -11,8 +11,12 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/launch', ['launch/bag_image_extractor.launch.py']),
+        ('share/' + package_name + '/launch', ['launch/bag_inference.launch.py']),
         ('share/' + package_name + '/launch', ['launch/offline_inference.launch.py']),
         ('share/' + package_name + '/launch', ['launch/topic_pipeline.launch.py']),
+        ('share/' + package_name + '/config', ['config/bag_image_extractor.params.yaml']),
+        ('share/' + package_name + '/config', ['config/bag_inference.params.yaml']),
         ('share/' + package_name + '/config', ['config/offline_inference.params.yaml']),
         ('share/' + package_name + '/config', ['config/topic_pipeline.params.yaml']),
     ],
@@ -24,6 +28,8 @@ setup(
     license='Proprietary',
     entry_points={
         'console_scripts': [
+            'bag_image_extractor = cpgfanet_inference.bag_image_extractor_node:main',
+            'bag_inference = cpgfanet_inference.bag_inference_node:main',
             'offline_inference = cpgfanet_inference.offline_inference_node:main',
             'dataset_replay = cpgfanet_inference.dataset_replay_node:main',
             'topic_inference = cpgfanet_inference.topic_inference_node:main',

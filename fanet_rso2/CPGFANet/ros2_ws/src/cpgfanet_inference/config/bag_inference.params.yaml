@@ -1,0 +1,96 @@
+cpgfanet_bag_inference:
+  ros__parameters:
+    repo_root: /workspace/CPGFANet
+    checkpoint_path: /workspace/CPGFANet/weights/160.pth
+    model_module: model.CrissCrossAttention_dual_2_sinINF
+    model_class: FEANet
+    bag_path: /workspace/bags/rosbag2_2026_06_12-10_39_26
+    rgb_topic: /fanet/raw/rgb
+    thermal_topic: /fanet/raw/thermal
+    output_dir: /workspace/CPGFANet/ros2_outputs/bag_inference
+    device: cuda:0
+    input_width: 640
+    input_height: 360
+    num_classes: 12
+    rgb_scale: 255.0
+    thermal_scale: 255.0
+    overlay_alpha: 0.45
+    max_pairs: 0
+    sample_stride: 1
+    pair_tolerance_ms: 50.0
+    save_outputs: true
+    save_alignment_outputs: true
+    save_input_images: true
+    enable_alignment_check: true
+    infer_on_aligned_images: false
+    alignment_overlay_alpha: 0.35
+    rectify_alpha: 0.0
+    display_results: true
+    display_wait_ms: 30
+    step_through_images: false
+    display_dashboard: true
+    display_dashboard_window_name: FANet aligned dashboard
+    display_separate_windows: false
+    display_rgb_input_window_name: FANet input RGB aligned
+    display_thermal_input_window_name: FANet input thermal aligned
+    display_overlay_window_name: FANet overlay aligned
+    display_mask_window_name: FANet segmentation aligned
+    draw_person_centroids: true
+    person_class_index: 2
+    person_min_pixels: 25
+    person_min_bbox_width: 8
+    person_min_bbox_height: 16
+    person_morph_open_kernel: 1
+    person_morph_close_kernel: 3
+    enable_perf_logging: true
+    perf_log_period_s: 5.0
+    perf_window: 50
+    enable_amp: false
+    enable_cudnn_benchmark: true
+    enable_cuda_sync_timing: false
+    rgb_camera_matrix:
+      - 894.7163072465
+      - 0.0
+      - 341.2116800525
+      - 0.0
+      - 905.1990239793
+      - 171.9461068409
+      - 0.0
+      - 0.0
+      - 1.0
+    rgb_distortion:
+      - 0.1801051399
+      - -5.4233096945
+      - 0.0
+      - 0.0
+      - 0.0
+    thermal_camera_matrix:
+      - 276.3844298115
+      - 0.0
+      - 314.9498359235
+      - 0.0
+      - 268.8229935681
+      - 189.2374843848
+      - 0.0
+      - 0.0
+      - 1.0
+    thermal_distortion:
+      - -0.5877579533
+      - 13.9448575456
+      - 0.0
+      - 0.0
+      - 0.0
+    thermal_to_rgb_rotation:
+      - 0.9968084661
+      - 0.0017959423
+      - 0.0798101278
+      - 0.0078702669
+      - 0.9926656953
+      - -0.1206353026
+      - -0.0794414301
+      - 0.1208784180
+      - 0.9894834346
+    thermal_to_rgb_translation_m:
+      - -0.0234150327
+      - 0.0488933772
+      - -0.0078611506
